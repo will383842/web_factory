@@ -33,7 +33,7 @@ final class AdminUserSeeder extends Seeder
             return;
         }
 
-        User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => $email],
             [
                 'name' => 'WebFactory Admin',
@@ -42,6 +42,9 @@ final class AdminUserSeeder extends Seeder
             ],
         );
 
-        $this->command?->info("Admin user ensured: {$email}");
+        // Assign the admin role (idempotent — Spatie no-ops if already set)
+        $user->assignRole('admin');
+
+        $this->command?->info("Admin user ensured: {$email} (role: admin)");
     }
 }

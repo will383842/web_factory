@@ -27,6 +27,15 @@ parameters:
         - '#Call to an undefined (method|static method) Pest\\.*#'
         # Pest dynamic Laravel test methods ($this->get, $this->post, ...) on TestCall
         - '#Call to an undefined method Pest\\PendingCalls\\TestCall::.*#'
+        # Pest test files use $this->propName set in beforeEach() — dynamic assignment
+        - '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$.*#'
+        # Pest expectation chain $not is a magic method/property
+        - '#Access to an undefined property Pest\\Mixins\\Expectation.*::\$not.#'
+        # In tests we factory()->create() then access properties; PHPStan still sees |null|Collection
+        - identifier: property.nonObject
+          path: tests/*
+        - identifier: method.nonObject
+          path: tests/*
         # Trivial Laravel default test
         - identifier: method.alreadyNarrowedType
           path: tests/Unit/ExampleTest.php
@@ -41,6 +50,9 @@ parameters:
         # Telescope default gate has an empty allowlist that we fill at deploy time
         - identifier: function.impossibleType
           path: app/Providers/TelescopeServiceProvider.php
+        # Spatie Permission's Eloquent Builder->pluck() typedef wants Expression — strings are fine at runtime
+        - identifier: argument.type
+          path: tests/Feature/Identity/RolePermissionTest.php
 
     reportUnmatchedIgnoredErrors: false
     treatPhpDocTypesAsCertain: false

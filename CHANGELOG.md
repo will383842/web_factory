@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 2 — Identity BC implementation (pragmatic core):
+  - **Eloquent adapter** for Identity:
+    - `app/Infrastructure/Persistence/Eloquent/Mappers/UserMapper` — Domain ↔ Eloquent translation
+    - `app/Infrastructure/Persistence/Eloquent/Repositories/EloquentUserRepository` implements `UserRepositoryInterface`
+    - Wired in `DomainServiceProvider`
+  - **Spatie Permission** (v7.3.0) integrated:
+    - Migrations published + run (5 tables: roles, permissions, model_has_roles, model_has_permissions, role_has_permissions)
+    - `RolePermissionSeeder` seeds the canonical 3-role taxonomy (admin/editor/user) + 16 baseline permissions
+    - `App\Models\User` has `HasRoles` trait; `canAccessPanel()` requires admin or editor
+    - `AdminUserSeeder` automatically assigns the `admin` role to the seeded admin
+  - **Application use case** `RegisterUserHandler` + `RegisterUserCommand` DTO
+    (creates Eloquent record + builds Domain aggregate + dispatches `UserRegistered`)
+  - **Filament Admin Resource** for User: CRUD + role assignment via `php artisan make:filament-resource User`
+  - **Tests Pest** (10 new, +27 total → 37/72):
+    - `tests/Feature/Identity/EloquentUserRepositoryTest` — find/save/delete via repo
+    - `tests/Feature/Identity/RegisterUserHandlerTest` — command flow + password hashing + event dispatch
+    - `tests/Feature/Identity/RolePermissionTest` — 3-role taxonomy, admin all-perms, editor subset, role assignment
+  - **PHPStan** ignore patterns refined for Pest dynamic test patterns ($this->prop in beforeEach, $not magic prop, factory()->create() nullable result narrowing)
+
+### Deferred to Sprint 2.5
+
+- 2FA TOTP (`spatie/laravel-qrcode` + `spomky-labs/otphp`)
+- Magic links (signed URL flow)
+- Custom password reset (Laravel default still works via Filament)
+- API REST `/api/v1/auth/*` endpoints (Sanctum tokens)
+
 - Sprint 1 — Architecture squelette:
   - **Shared kernel** (`app/Domain/Shared`):
     - `Events/DomainEvent` (abstract), `Contracts/EventDispatcher` (interface)
