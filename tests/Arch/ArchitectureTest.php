@@ -150,7 +150,21 @@ arch('Application Commands have a Command suffix')
         'App\Application\Analytics\DTOs',
         'App\Application\Ai\DTOs',
         'App\Application\Compliance\DTOs',
+        'App\Application\Identity\Handlers',
+        'App\Application\Catalog\Handlers',
+        'App\Application\Content\Handlers',
+        'App\Application\Marketing\Handlers',
+        'App\Application\Billing\Handlers',
+        'App\Application\Communication\Handlers',
+        'App\Application\Search\Handlers',
+        'App\Application\Analytics\Handlers',
+        'App\Application\Ai\Handlers',
+        'App\Application\Compliance\Handlers',
     ]);
+
+arch('Application Handlers have a Handler suffix')
+    ->expect('App\Application\Identity\Handlers')
+    ->toHaveSuffix('Handler');
 
 // ---------------------------------------------------------------------------
 // 8. Domain Events all extend the base DomainEvent

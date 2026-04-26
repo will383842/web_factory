@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -24,7 +25,11 @@ final class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Reset Spatie's permission cache so the seeder picks up fresh state.
+        // Bullet-proof cache reset: artisan command flushes the Spatie cache
+        // through the Laravel cache store too (Redis in our setup), which is
+        // necessary when the seeder runs after a `migrate:fresh` (the in-memory
+        // registrar cache alone leaves stale entries in the cache backend).
+        Artisan::call('permission:cache-reset');
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $permissions = [
@@ -35,20 +40,22 @@ final class RolePermissionSeeder extends Seeder
             'audit.view',
         ];
 
+        // firstOrCreate goes straight through Eloquent without consulting the
+        // Spatie cache layer — robust against any stale cache state.
         foreach ($permissions as $name) {
-            Permission::findOrCreate($name);
+            Permission::query()->firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }
 
-        $admin = Role::findOrCreate('admin');
+        $admin = Role::query()->firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $admin->syncPermissions($permissions);
 
-        $editor = Role::findOrCreate('editor');
+        $editor = Role::query()->firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
         $editor->syncPermissions([
             'pages.view', 'pages.create', 'pages.edit', 'pages.publish',
             'products.view', 'products.create', 'products.edit',
         ]);
 
-        Role::findOrCreate('user');
+        Role::query()->firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
         // 'user' has no permissions by default — uses model-level policies.
     }
 }
