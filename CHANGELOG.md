@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 5 — Pipeline orchestrator (étapes 1-3) :
+  - **Domain Events** Catalog : `IdeaAnalyzed`, `BlueprintGenerated`, `DesignGenerated`
+  - **Application DTOs** : `IdeaAnalysisResult` (virality+value+clarifications+strengths+weaknesses),
+    `Blueprint` (pages+journeys+kpis), `DesignSystem` (tokens+mockups)
+  - **Application service ports** : `IdeaAnalysisService`, `BlueprintGenerationService`, `DesignGenerationService`
+  - **Infrastructure adapters Sprint 5 (heuristics, mock IA)** :
+    - `HeuristicIdeaAnalysisService` — scoring déterministe (longueur, keywords viraux, locale bonus)
+    - `HeuristicBlueprintGenerationService` — 10 pages standard + 3 journeys + 5 KPIs
+    - `HeuristicDesignGenerationService` — token set indigo/slate + 8 mockups HTML
+    - Sprint 19 swappera ces adapters pour les versions Claude API
+  - **Horizon Jobs** chainés (3 retries + 30s backoff) :
+    - `AnalyzeProjectIdeaJob` — step 1 : transition Draft→Analyzing, scoring, dispatch IdeaAnalyzed, chain step 2
+    - `GenerateBlueprintJob` — step 2 : transition →Blueprinting, génération blueprint, chain step 3
+    - `GenerateDesignJob` — step 3 : transition →Designing, génération design system + mockups
+  - **Listener** `StartPipelineOnProjectCreated` auto-déclenche AnalyzeProjectIdeaJob sur ProjectCreated
+  - **DomainServiceProvider** wires les 3 service ports + le listener via `Dispatcher::listen()` dans `boot()`
+  - **Tests Pest** (12 nouveaux, +77 total → **77 / 181 assertions**) :
+    - Unit : 4 tests `HeuristicIdeaAnalysisService`, 2 `HeuristicBlueprintGenerationService`, 2 `HeuristicDesignGenerationService`
+    - Feature : 4 tests `PipelineChainTest` (Bus::fake → queued, sync queue → designing+metadata, chain steps, IdeaAnalyzed event)
+
 - Sprint 4 — Catalog BC complet:
   - **Domain**: `Catalog\Project` aggregate root (renommage de Product Sprint 1):
     fields slug+name+description+status+locale+primaryDomain+viralityScore+valueScore+ownerId+metadata
