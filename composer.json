@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "bacon/bacon-qr-code": "^3.1",
         "filament/filament": "^4.0",
         "filament/spatie-laravel-settings-plugin": "^4.11",
         "inertiajs/inertia-laravel": "^3.0",
@@ -19,6 +20,7 @@
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.32",
         "meilisearch/meilisearch-php": "^1.16",
+        "pragmarx/google2fa": "^9.0",
         "predis/predis": "^3.4",
         "sentry/sentry-laravel": "^4.25",
         "spatie/laravel-permission": "^7.3",

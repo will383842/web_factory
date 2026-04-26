@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 6.5 — Public B2C Auth API (REST, Sanctum, no web views) :
+  - **Packages** : `pragmarx/google2fa` v9 + `bacon/bacon-qr-code` v3
+  - **Migration** `add_b2c_auth_columns_to_users` : `two_factor_secret` (text encrypted), `two_factor_recovery_codes` (text encrypted:array), `two_factor_confirmed_at` (timestamp)
+  - **Migration** `magic_link_tokens` (FK user, token unique, expires_at, consumed_at)
+  - **Model** `User` : `MustVerifyEmail` interface + `hasTwoFactorEnabled()` helper + casts encrypted/datetime + Hidden 2FA fields
+  - **Model** `MagicLinkToken` (BelongsTo user, isExpired/isConsumed/isUsable)
+  - **14 endpoints REST `/api/v1/auth/*`** :
+    - `POST /register` — crée user (rôle 'user') + dispatch Registered + Sanctum token (201)
+    - `POST /login` — credentials → token (ou `challenge_token` si 2FA activé)
+    - `POST /logout` — revoke current token (204)
+    - `GET /me` — user authentifié + roles + 2fa flag
+    - `POST /forgot-password` — email reset (no leak email enum)
+    - `POST /reset-password` — valide token + set password + revoke tokens
+    - `GET /email/verify/{id}/{hash}` — signed URL verification
+    - `POST /email/resend` — resend verification email
+    - `POST /2fa/enable` — secret + QR SVG base64 + 8 recovery codes
+    - `POST /2fa/confirm` — valide TOTP, sets confirmed_at
+    - `POST /2fa/verify` — exchange challenge_token + TOTP → Sanctum token
+    - `POST /2fa/disable` — password reconfirm required
+    - `POST /magic-link/request` — issue 60-min signed token, log it (Mail in prod)
+    - `GET /magic-link/consume?token=` — single-use → Sanctum token
+  - **Tests Pest** (15 nouveaux, +99 total → **99 / 255 assertions**) : register OK + weak password 422 + dup email 422, login OK + invalid 422, logout revoke, /me, forgot-password, magic-link request+consume + already-consumed + expired, 2FA enable/confirm/disable + login challenge_token
+
+### Fixed
+
+- Sprint 6 hash sha1 → sha256 (Pest security preset rule)
+
 - Sprint 6 — Pipeline orchestrator étapes 4-5 :
   - **Domain Events Catalog** : `BriefBuilt`, `BriefScored`, `GitHubRepositoryCreated`
   - **Exception** : `BriefScoreTooLowException` (gate ≥85)
