@@ -153,7 +153,108 @@ arch('Application Commands have a Command suffix')
     ]);
 
 // ---------------------------------------------------------------------------
-// 8. Pest preset: PHP best-practices
+// 8. Domain Events all extend the base DomainEvent
+// ---------------------------------------------------------------------------
+
+arch('every domain event extends DomainEvent')
+    ->expect('App\Domain')
+    ->classes()
+    ->toExtend('App\Domain\Shared\Events\DomainEvent')
+    ->ignoring([
+        'App\Domain\Identity\Entities',
+        'App\Domain\Catalog\Entities',
+        'App\Domain\Content\Entities',
+        'App\Domain\Marketing\Entities',
+        'App\Domain\Billing\Entities',
+        'App\Domain\Communication\Entities',
+        'App\Domain\Search\Entities',
+        'App\Domain\Analytics\Entities',
+        'App\Domain\Ai\Entities',
+        'App\Domain\Compliance\Entities',
+        'App\Domain\Identity\ValueObjects',
+        'App\Domain\Catalog\ValueObjects',
+        'App\Domain\Content\ValueObjects',
+        'App\Domain\Marketing\ValueObjects',
+        'App\Domain\Billing\ValueObjects',
+        'App\Domain\Communication\ValueObjects',
+        'App\Domain\Search\ValueObjects',
+        'App\Domain\Analytics\ValueObjects',
+        'App\Domain\Ai\ValueObjects',
+        'App\Domain\Compliance\ValueObjects',
+        'App\Domain\Shared',
+        'App\Domain\Identity\Services',
+        'App\Domain\Catalog\Services',
+        'App\Domain\Content\Services',
+        'App\Domain\Marketing\Services',
+        'App\Domain\Billing\Services',
+        'App\Domain\Communication\Services',
+        'App\Domain\Search\Services',
+        'App\Domain\Analytics\Services',
+        'App\Domain\Ai\Services',
+        'App\Domain\Compliance\Services',
+        'App\Domain\Identity\Exceptions',
+        'App\Domain\Catalog\Exceptions',
+        'App\Domain\Content\Exceptions',
+        'App\Domain\Marketing\Exceptions',
+        'App\Domain\Billing\Exceptions',
+        'App\Domain\Communication\Exceptions',
+        'App\Domain\Search\Exceptions',
+        'App\Domain\Analytics\Exceptions',
+        'App\Domain\Ai\Exceptions',
+        'App\Domain\Compliance\Exceptions',
+    ])
+    ->classes(); // re-applied filter is a no-op but keeps DSL chain explicit
+
+// ---------------------------------------------------------------------------
+// 9. Domain Exceptions all extend DomainException
+// ---------------------------------------------------------------------------
+
+arch('every domain exception extends DomainException')
+    ->expect('App\Domain\Identity\Exceptions')
+    ->toExtend('App\Domain\Shared\Exceptions\DomainException');
+
+arch('every catalog exception extends DomainException')
+    ->expect('App\Domain\Catalog\Exceptions')
+    ->toExtend('App\Domain\Shared\Exceptions\DomainException');
+
+// ---------------------------------------------------------------------------
+// 10. Value Objects are final (immutability hint)
+// ---------------------------------------------------------------------------
+
+arch('shared value objects are final')
+    ->expect('App\Domain\Shared\ValueObjects')
+    ->toBeFinal();
+
+arch('identity value objects are final')
+    ->expect('App\Domain\Identity\ValueObjects')
+    ->toBeFinal();
+
+// ---------------------------------------------------------------------------
+// 11. No HttpClient in Domain (Guzzle/Symfony HTTP belong to Infrastructure)
+// ---------------------------------------------------------------------------
+
+arch('domain does not use GuzzleHttp')
+    ->expect('App\Domain')
+    ->not->toUse('GuzzleHttp');
+
+arch('domain does not use Symfony HttpClient')
+    ->expect('App\Domain')
+    ->not->toUse('Symfony\Component\HttpClient');
+
+// ---------------------------------------------------------------------------
+// 12. Application layer is also infrastructure-free
+// ---------------------------------------------------------------------------
+
+arch('application does not depend on infrastructure')
+    ->expect('App\Application')
+    ->not->toUse('App\Infrastructure');
+
+arch('application does not depend on Eloquent')
+    ->expect('App\Application')
+    ->not->toUse('Illuminate\Database\Eloquent');
+
+// ---------------------------------------------------------------------------
+// 13. Pest preset: PHP best-practices
 // ---------------------------------------------------------------------------
 
 arch('php best practices')
@@ -161,7 +262,7 @@ arch('php best practices')
     ->php();
 
 // ---------------------------------------------------------------------------
-// 9. Pest preset: security baseline
+// 14. Pest preset: security baseline
 // ---------------------------------------------------------------------------
 
 arch('security baseline')
