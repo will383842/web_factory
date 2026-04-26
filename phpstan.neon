@@ -58,6 +58,8 @@ parameters:
         - '#Method App\\Models\\.+::\w+\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo<.+> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo<.+>\.#'
         # Same template covariance issue applies to HasMany (Sprint 13.1+).
         - '#Method App\\Models\\.+::\w+\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany<.+> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany<.+>\.#'
+        # Same template covariance issue applies to BelongsToMany (Sprint 13.2+).
+        - '#Method App\\Models\\.+::\w+\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany<.+> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany<.+>\.#'
         # Sanctum personal_access_tokens "token" column not typed in the
         # PersonalAccessToken model stub — accept literal "token" string here.
         - identifier: argument.type

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 13.2 — Teams + SSO (Identity extension) :
+  - **4 migrations** : `teams` (slug unique, owner FK, settings JSON), `team_members` (3 ROLE_OWNER/ADMIN/MEMBER, unique team_id+user_id), `team_invitations` (sha256 token_hash unique, status pending/accepted/revoked/expired, expires_at default 7j), `sso_identities` (provider+provider_user_id unique, tokens chiffrés via cast `encrypted`)
+  - **4 Eloquent models** : `Team` (3 const ROLE_*, BelongsTo owner/project, BelongsToMany members + HasMany invitations), `TeamMember`, `TeamInvitation` (4 STATUS_* + `hashToken()` static + `isPending()`), `SsoIdentity` (5 const PROVIDER_*, casts encrypted sur access/refresh tokens)
+  - **User extension** : relations `teams()` BelongsToMany pivot role+joined_at, `ownedTeams()` HasMany, `ssoIdentities()` HasMany
+  - **Domain Identity events** : `TeamCreated`, `MemberJoined` (étendent `DomainEvent`)
+  - **Application ports** :
+    - `SsoProvider` interface (driver pattern : `name()` / `authorizationUrl()` / `exchangeCode()`)
+    - `SsoProviderRegistry` (lookup par nom, throw InvalidArgumentException sinon)
+  - **DTO** `SsoUserProfile` (provider / providerUserId / email / name / accessToken / refreshToken / expiresIn / rawPayload)
+  - **Application services** :
+    - `TeamService` : `createTeam` (transaction + auto-membership owner), `inviteMember` (raw token 48 chars, hash en DB), `acceptInvitation` (lockForUpdate, throw DomainException si expired), `removeMember`, `transferOwnership` (demote owner→admin + promote new owner)
+    - `SsoIdentityLinker` : 3 cascade — (1) existing SsoIdentity → return user + touch tokens, (2) email match → auto-link, (3) create fresh user (forceFill avec email_verified_at via SSO trust)
+  - **Adapter Sprint-13.2** `PlaceholderSsoProvider` : génère URL `https://sso.test/{provider}/authorize`, parse code `sso_test:<pid>:<email>` ou hash deterministe — Sprint 16 swap → laravel/socialite
+  - **HTTP** :
+    - `GET /api/v1/auth/sso/{provider}/redirect` → authorization URL + state CSRF (40 chars)
+    - `POST /api/v1/auth/sso/{provider}/callback` → exchange code + Sanctum personal access token
+  - **DomainServiceProvider** : binding singleton `SsoProviderRegistry` avec 5 providers (google/microsoft/apple/okta/github)
+  - **Filament admin (groupe "Identity")** :
+    - `TeamResource` CRUD : icon user-group, form Identity (owner/project/slug/name/logo) + Settings KeyValue, table avec memberships_count
+    - `TeamInvitationResource` read-only : icon envelope, table avec status badge couleur (pending=warning, accepted=success, expired/revoked=danger), action "Revoke" sur pending
+    - `SsoIdentityResource` read-only : icon key, table avec provider badge + filters par provider, DeleteAction (allow user to unlink)
+  - **PHPStan ignoreErrors** : pattern BelongsToMany covariance (Larastan upstream issue, idem BelongsTo/HasMany)
+  - **Tests Pest** (17 nouveaux, +190 total → **190 / 477 assertions**) :
+    - Registry SSO (5 providers + throw on unknown)
+    - TeamService (createTeam + owner membership, inviteMember hash, acceptInvitation success + expired throws, transferOwnership demote/promote)
+    - SsoIdentityLinker (fresh user, email auto-link, idempotent on returning)
+    - HTTP SSO (redirect URL + state, callback exchange + token, empty code 422)
+    - Filament admin reaches 4 routes (teams index/create, invitations, sso-identities)
+  - **Quality** : PHPStan No errors, Pint **350 files PASS**
+
 - Sprint 13.1 — Billing module (Stripe placeholder + idempotent webhook intake) :
   - **6 migrations** : `billing_plans`, `billing_customers`, `billing_subscriptions`, `billing_invoices`, `billing_coupons`, `billing_webhook_events` (multi-tenant FK `project_id`, enums Stripe-shaped, indexes (status, current_period_end, expires_at), unique `(provider, event_id)` pour idempotency)
   - **6 Eloquent models** : `BillingPlan` (CYCLE_MONTHLY/YEARLY/ONE_TIME), `BillingCustomer`, `BillingSubscription` (7 STATUS_* + `isActive()`), `BillingInvoice` (5 STATUS_*), `BillingCoupon` (`isRedeemable()` respecte expires_at + max_redemptions + is_active), `BillingWebhookEvent` (4 PROVIDER_*)

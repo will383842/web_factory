@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
 use App\Http\Controllers\Api\V1\Auth\MagicLinkController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
+use App\Http\Controllers\Api\V1\Auth\SsoController;
 use App\Http\Controllers\Api\V1\Auth\TwoFactorController;
 use App\Http\Controllers\Api\V1\Billing\StripeWebhookController;
 use App\Http\Controllers\Api\V1\ProjectController;
@@ -33,6 +34,10 @@ Route::prefix('v1/auth')->name('api.v1.auth.')->group(function (): void {
 
     // 2FA verify happens with a challenge_token (no Sanctum guard required)
     Route::post('2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
+
+    // Sprint 13.2 — SSO (Google / Microsoft / Apple / Okta / GitHub)
+    Route::get('sso/{provider}/redirect', [SsoController::class, 'redirect'])->name('sso.redirect');
+    Route::post('sso/{provider}/callback', [SsoController::class, 'callback'])->name('sso.callback');
 });
 
 // Authenticated routes (Sanctum)
