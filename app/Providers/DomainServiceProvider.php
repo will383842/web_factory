@@ -14,6 +14,7 @@ use App\Application\Catalog\Services\GitHubRepositoryService;
 use App\Application\Catalog\Services\IdeaAnalysisService;
 use App\Application\Content\Services\EmbeddingService;
 use App\Application\Content\Services\KnowledgeBaseSearchService;
+use App\Application\Identity\Services\SsoProviderRegistry;
 use App\Application\Marketing\Services\IndexNowPingService;
 use App\Application\Operations\Services\BackupService;
 use App\Domain\Catalog\Contracts\ProjectRepositoryInterface;
@@ -29,6 +30,7 @@ use App\Infrastructure\Content\HeuristicEmbeddingService;
 use App\Infrastructure\Content\Listeners\IngestPublishedContentToKnowledgeBase;
 use App\Infrastructure\Content\PgVectorKnowledgeBase;
 use App\Infrastructure\Events\LaravelEventDispatcher;
+use App\Infrastructure\Identity\PlaceholderSsoProvider;
 use App\Infrastructure\Marketing\LogIndexNowPingService;
 use App\Infrastructure\Operations\LocalFilesystemBackupService;
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentProjectRepository;
@@ -54,6 +56,7 @@ use Illuminate\Support\ServiceProvider;
  * Sprint 8: + KnowledgeBaseSearchService binding + IndexNow port.
  * Sprint 12: + BackupService (local-filesystem placeholder).
  * Sprint 13.1: + BillingGateway + BillingWebhookProcessor (Stripe placeholder + idempotent webhook intake).
+ * Sprint 13.2: + SsoProviderRegistry (Google/Microsoft/Apple/Okta/GitHub placeholder drivers).
  */
 final class DomainServiceProvider extends ServiceProvider
 {
@@ -83,6 +86,16 @@ final class DomainServiceProvider extends ServiceProvider
         // Sprint 13.1 — Billing
         $this->app->bind(BillingGateway::class, PlaceholderStripeBillingGateway::class);
         $this->app->bind(BillingWebhookProcessor::class, IdempotentBillingWebhookProcessor::class);
+
+        // Sprint 13.2 — Identity / SSO (5 placeholder providers, swap → Socialite Sprint 16)
+        $this->app->singleton(SsoProviderRegistry::class, function (): SsoProviderRegistry {
+            $registry = new SsoProviderRegistry;
+            foreach (['google', 'microsoft', 'apple', 'okta', 'github'] as $name) {
+                $registry->register(new PlaceholderSsoProvider($name));
+            }
+
+            return $registry;
+        });
     }
 
     public function boot(Dispatcher $events): void
