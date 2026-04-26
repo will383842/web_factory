@@ -105,7 +105,8 @@ final class HeuristicBriefBuilderService implements BriefBuilderService
         }
 
         ksort($files);
-        $checksum = sha1((string) json_encode(array_keys($files)).serialize($files));
+        // Non-security checksum (just an identity for the bundle).
+        $checksum = hash('sha256', (string) json_encode(array_keys($files)).serialize($files));
 
         return new BriefBundle(files: $files, checksum: $checksum);
     }

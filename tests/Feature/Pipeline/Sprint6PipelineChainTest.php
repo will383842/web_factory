@@ -67,7 +67,7 @@ it('builds a brief with at least 35 files via the heuristic builder', function (
         ->and($bundle->files)->toHaveKey('README.md')
         ->and($bundle->files)->toHaveKey('blueprint.json')
         ->and($bundle->files)->toHaveKey('design/tokens.json')
-        ->and($bundle->checksum)->toHaveLength(40); // sha1
+        ->and($bundle->checksum)->toHaveLength(64); // sha256
 });
 
 it('scorer accepts a complete brief (>= 85) and rejects a sparse one', function (): void {

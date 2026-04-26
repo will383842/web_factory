@@ -46,7 +46,7 @@ final class ScoreBriefJob implements ShouldQueue
         /** @var array<string, string> $files */
         $files = (array) json_decode($payload, true);
 
-        $checksum = (string) ($project->metadata['brief']['checksum'] ?? sha1($payload));
+        $checksum = (string) ($project->metadata['brief']['checksum'] ?? hash('sha256', $payload));
         $bundle = new BriefBundle(files: $files, checksum: $checksum);
 
         $score = $scorer->score($project, $bundle);
