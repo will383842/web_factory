@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 7 — Content Engine + multi-tenant + pgvector (KB foundation) :
+  - **Postgres image** : switch `postgres:16-alpine` → `pgvector/pgvector:pg16` (extension `vector` v0.8.2)
+  - **Migrations multi-tenant** :
+    - `pages` (FK project_id, slug+locale unique, type, status, content_blocks JSON, meta_tags JSON)
+    - `articles` (FK project_id, body, excerpt, seo_keywords, is_pillar, word_count, reading_time, quality_score)
+    - `faqs` (FK project_id, question, answer, category, is_featured, view/helpful counts)
+    - `knowledge_chunks` (FK project_id, source_type, content, **`embedding vector(384)`** + HNSW cosine index)
+  - **Domain Content** enrichi : `Page` (status workflow + projectId + content_blocks), nouveau `Article`, nouveau `Faq`, enum `ContentStatus`
+  - **Events Content** : `ArticlePublished` (nouveau), `FaqAnswered` (nouveau), `PagePublished` (existant)
+  - **Eloquent models** : `Page`, `Article`, `Faq`, `KnowledgeChunk` (multi-tenant via FK project_id)
+  - **Application services** :
+    - port `EmbeddingService` (impl `HeuristicEmbeddingService` 384-dim hash-based BoW L2-normalized)
+    - port `KnowledgeBaseSearchService` + `KnowledgeChunkSearchResult` DTO
+  - **Infrastructure** : `PgVectorKnowledgeBase` ingest + cosine search via pgvector `<=>` operator avec scope multi-tenant
+  - **Listener** `IngestPublishedContentToKnowledgeBase` : auto-ingestion sur `PagePublished` + `ArticlePublished`
+  - **Tests Pest** (8 nouveaux, +107 total → **107 / 269 assertions**) :
+    - Unit Embedding : 384-dim, L2-normalized, non-zero on empty, semantic similarity > unrelated
+    - Feature KB : ingest + 384-dim stored, top match correct sur "ciel meteo Paris", **multi-tenant isolation (no cross-tenant leak)**, auto-ingest article on publish event
+  - DomainServiceProvider : binding EmbeddingService + 2 listeners (PagePublished, ArticlePublished)
+  - **Note** : Filament resources (PageResource, ArticleResource, FaqResource) déférés en Sprint 10/11 (Spec 30)
+
 - Sprint 6.5 — Public B2C Auth API (REST, Sanctum, no web views) :
   - **Packages** : `pragmarx/google2fa` v9 + `bacon/bacon-qr-code` v3
   - **Migration** `add_b2c_auth_columns_to_users` : `two_factor_secret` (text encrypted), `two_factor_recovery_codes` (text encrypted:array), `two_factor_confirmed_at` (timestamp)
