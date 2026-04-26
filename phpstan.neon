@@ -53,6 +53,9 @@ parameters:
         # Spatie Permission's Eloquent Builder->pluck() typedef wants Expression — strings are fine at runtime
         - identifier: argument.type
           path: tests/Feature/Identity/RolePermissionTest.php
+        # BelongsTo template covariance noise — Larastan upstream open issue:
+        # `$this(Model)` vs Model in BelongsTo<TParent, TDeclaringModel> generic
+        - '#Method App\\Models\\.+::\w+\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo<.+> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo<.+>\.#'
 
     reportUnmatchedIgnoredErrors: false
     treatPhpDocTypesAsCertain: false

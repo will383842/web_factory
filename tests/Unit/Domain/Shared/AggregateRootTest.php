@@ -2,47 +2,61 @@
 
 declare(strict_types=1);
 
-use App\Domain\Catalog\Entities\Product;
-use App\Domain\Catalog\Events\ProductCreated;
-use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Catalog\Entities\Project;
+use App\Domain\Catalog\Events\ProjectCreated;
+use App\Domain\Catalog\ValueObjects\ProjectStatus;
+use App\Domain\Shared\ValueObjects\Locale;
 use App\Domain\Shared\ValueObjects\Slug;
 
-it('records a domain event on factory creation', function (): void {
-    $product = Product::create(
-        id: 'prod-1',
-        slug: new Slug('hello-product'),
+it('records a domain event on factory submit()', function (): void {
+    $project = Project::submit(
+        id: 'proj-1',
+        slug: new Slug('hello-project'),
         name: 'Hello',
-        price: Money::fromMinor(1000, 'EUR'),
+        description: 'A test project',
+        locale: new Locale('fr'),
+        primaryDomain: null,
+        ownerId: 'user-1',
     );
 
-    $events = $product->pendingEvents();
+    $events = $project->pendingEvents();
     expect($events)->toHaveCount(1)
-        ->and($events[0])->toBeInstanceOf(ProductCreated::class)
-        ->and($events[0]->aggregateId())->toBe('prod-1')
-        ->and($events[0]->eventName())->toBe('catalog.product.created');
+        ->and($events[0])->toBeInstanceOf(ProjectCreated::class)
+        ->and($events[0]->aggregateId())->toBe('proj-1')
+        ->and($events[0]->eventName())->toBe('catalog.project.created');
 });
 
 it('does NOT record events on rehydration', function (): void {
-    $product = Product::rehydrate(
-        id: 'prod-2',
+    $project = Project::rehydrate(
+        id: 'proj-2',
         slug: new Slug('rehydrated'),
         name: 'Rehydrated',
-        price: Money::fromMinor(500, 'USD'),
+        description: null,
+        status: ProjectStatus::Draft,
+        locale: new Locale('en'),
+        primaryDomain: null,
+        viralityScore: 0,
+        valueScore: 0,
+        ownerId: 'user-1',
+        metadata: [],
     );
 
-    expect($product->pendingEvents())->toBeEmpty();
+    expect($project->pendingEvents())->toBeEmpty();
 });
 
 it('flushEvents pops and clears recorded events', function (): void {
-    $product = Product::create(
-        id: 'prod-3',
+    $project = Project::submit(
+        id: 'proj-3',
         slug: new Slug('one'),
         name: 'Three',
-        price: Money::fromMinor(1, 'EUR'),
+        description: null,
+        locale: new Locale('fr'),
+        primaryDomain: null,
+        ownerId: 'user-1',
     );
 
-    $first = $product->flushEvents();
-    $second = $product->flushEvents();
+    $first = $project->flushEvents();
+    $second = $project->flushEvents();
 
     expect($first)->toHaveCount(1)
         ->and($second)->toBeEmpty();

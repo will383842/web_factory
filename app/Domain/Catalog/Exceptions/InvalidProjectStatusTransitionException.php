@@ -6,10 +6,10 @@ namespace App\Domain\Catalog\Exceptions;
 
 use App\Domain\Shared\Exceptions\DomainException;
 
-final class ProductNotFoundException extends DomainException
+final class InvalidProjectStatusTransitionException extends DomainException
 {
     public function errorCode(): string
     {
-        return 'catalog.product.not_found';
+        return 'catalog.project.invalid_status_transition';
     }
 }

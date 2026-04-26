@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 4 — Catalog BC complet:
+  - **Domain**: `Catalog\Project` aggregate root (renommage de Product Sprint 1):
+    fields slug+name+description+status+locale+primaryDomain+viralityScore+valueScore+ownerId+metadata
+  - `ValueObjects\ProjectStatus` enum (7 états : Draft → Analyzing → Blueprinting → Designing → Building → Deployed, + Archived terminal)
+  - `Events\ProjectCreated`, `Events\ProjectStatusChanged`
+  - `Exceptions\InvalidProjectStatusTransitionException`
+  - `Contracts\ProjectRepositoryInterface` (findById/findBySlug/save/delete/findByOwner/findByStatus)
+  - **Workflow** : `submit()`, `transitionTo()` (linéaire forward-only), `archive()` (depuis n'importe quel non-terminal), `score()` (clamp 0-100)
+  - **Persistence** :
+    - Migration `projects` (slug unique, status indexé, FK owner_id → users, soft-delete, json metadata)
+    - Eloquent `App\Models\Project` (HasFactory + SoftDeletes + AsArrayObject metadata + BelongsTo owner)
+    - `Mappers\ProjectMapper` (Domain ↔ Eloquent)
+    - `Repositories\EloquentProjectRepository` (binding wired in `DomainServiceProvider`)
+  - **Application** : `Commands\CreateProjectCommand` (DTO readonly), `Handlers\CreateProjectHandler` (insert + dispatch ProjectCreated)
+  - **Filament** : `Resources/Projects/ProjectResource` avec **wizard 5 étapes** (Idea / Audience / Stack / Branding / Review),
+    table avec status badges + filtre + soft-delete
+  - **API REST** :
+    - `laravel/sanctum` API installé (table `personal_access_tokens`)
+    - `User` model implémente `HasApiTokens`
+    - `routes/api.php` réécrit avec préfixe `/api/v1` + `auth:sanctum`
+    - `Http/Controllers/Api/V1/ProjectController` (index paginé scoped owner, show, store, destroy ; admins voient tout)
+    - `Http/Resources/Api/V1/ProjectResource` (transformation JSON)
+    - `Http/Requests/Api/V1/StoreProjectRequest` (validation slug regex unique + locale BCP-47)
+  - **Tests Pest** (19 nouveaux, +65 total → **65 / 132 assertions**) :
+    - `Unit/Domain/Catalog/ProjectTest` (7) : starts in draft + records, 5-step pipeline, refus skip/backwards, archive, clamp scores, rehydrate sans events
+    - `Feature/Catalog/EloquentProjectRepositoryTest` (5) : findById/findBySlug, save mutate, findByOwner+status ordered desc
+    - `Feature/Catalog/CreateProjectHandlerTest` (1) : flow e2e + ProjectCreated dispatch
+    - `Feature/Api/V1/ProjectApiTest` (6) : 401 unauthenticated, scoping owner, admin sees all, POST 201, validation 422, 403 forbidden cross-owner
+  - PHPStan ignore patterns ajoutés pour BelongsTo template covariance (Larastan open issue)
+
 - Sprint 3 — Console Filament base:
   - **`spatie/laravel-settings` v3.7** + **`filament/spatie-laravel-settings-plugin` v4.11** installed
   - `App\Settings\GeneralSettings` (siteName, siteTagline, supportEmail, defaultLocale, maintenanceMode)
