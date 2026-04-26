@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Application\Billing\Services\BillingGateway;
+use App\Application\Billing\Services\BillingWebhookProcessor;
 use App\Application\Catalog\Services\BlueprintGenerationService;
 use App\Application\Catalog\Services\BriefBuilderService;
 use App\Application\Catalog\Services\BriefScorerService;
@@ -21,6 +23,8 @@ use App\Domain\Content\Events\ArticlePublished;
 use App\Domain\Content\Events\PagePublished;
 use App\Domain\Identity\Contracts\UserRepositoryInterface;
 use App\Domain\Shared\Contracts\EventDispatcher;
+use App\Infrastructure\Billing\IdempotentBillingWebhookProcessor;
+use App\Infrastructure\Billing\PlaceholderStripeBillingGateway;
 use App\Infrastructure\Content\HeuristicEmbeddingService;
 use App\Infrastructure\Content\Listeners\IngestPublishedContentToKnowledgeBase;
 use App\Infrastructure\Content\PgVectorKnowledgeBase;
@@ -49,6 +53,7 @@ use Illuminate\Support\ServiceProvider;
  * Sprint 7: + EmbeddingService + KB ports + auto-import listeners.
  * Sprint 8: + KnowledgeBaseSearchService binding + IndexNow port.
  * Sprint 12: + BackupService (local-filesystem placeholder).
+ * Sprint 13.1: + BillingGateway + BillingWebhookProcessor (Stripe placeholder + idempotent webhook intake).
  */
 final class DomainServiceProvider extends ServiceProvider
 {
@@ -74,6 +79,10 @@ final class DomainServiceProvider extends ServiceProvider
 
         // Sprint 12 — Operations / Backups
         $this->app->bind(BackupService::class, LocalFilesystemBackupService::class);
+
+        // Sprint 13.1 — Billing
+        $this->app->bind(BillingGateway::class, PlaceholderStripeBillingGateway::class);
+        $this->app->bind(BillingWebhookProcessor::class, IdempotentBillingWebhookProcessor::class);
     }
 
     public function boot(Dispatcher $events): void

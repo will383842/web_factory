@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 13.1 — Billing module (Stripe placeholder + idempotent webhook intake) :
+  - **6 migrations** : `billing_plans`, `billing_customers`, `billing_subscriptions`, `billing_invoices`, `billing_coupons`, `billing_webhook_events` (multi-tenant FK `project_id`, enums Stripe-shaped, indexes (status, current_period_end, expires_at), unique `(provider, event_id)` pour idempotency)
+  - **6 Eloquent models** : `BillingPlan` (CYCLE_MONTHLY/YEARLY/ONE_TIME), `BillingCustomer`, `BillingSubscription` (7 STATUS_* + `isActive()`), `BillingInvoice` (5 STATUS_*), `BillingCoupon` (`isRedeemable()` respecte expires_at + max_redemptions + is_active), `BillingWebhookEvent` (4 PROVIDER_*)
+  - **Domain Billing events** : `SubscriptionStarted`, `SubscriptionRenewed`, `SubscriptionCanceled`, `PaymentFailed` (étendent `DomainEvent`)
+  - **Application ports** :
+    - `BillingGateway` (port driver-pattern : Stripe / Paddle / LemonSqueezy / Mollie) avec `createCheckoutSession` / `cancelSubscription` / `refundInvoice`
+    - `BillingWebhookProcessor` (port idempotent intake, contrat (provider, event_id) unique → MUST be no-op on retry)
+  - **DTOs** : `CheckoutSession` (sessionId / redirectUrl / provider) + `WebhookProcessingResult` (accepted / idempotent / eventId / eventType / errorMessage)
+  - **Adapters Sprint-13.1** :
+    - `PlaceholderStripeBillingGateway` : génère IDs synthétiques (`cs_test_*`, `sub_test_*`, `cus_test_*`), persiste subscription locale, jamais de réseau — Sprint 16 swap → stripe-php SDK sans toucher au port
+    - `IdempotentBillingWebhookProcessor` : check-first sur (provider, event_id) puis INSERT en savepoint (`DB::transaction`) ; race condition concurrente → loser détecte UNIQUE violation et retourne idempotent=true
+  - **HTTP webhook** : `POST /api/v1/billing/webhooks/stripe` → `StripeWebhookController` (signature HMAC Stripe-Signature ajoutée Sprint 16)
+  - **DomainServiceProvider** : bindings `BillingGateway` → `PlaceholderStripeBillingGateway`, `BillingWebhookProcessor` → `IdempotentBillingWebhookProcessor`
+  - **Filament admin (groupe "Billing")** :
+    - `BillingPlanResource` CRUD : icon rectangle-stack, form 4 sections (Identity / Pricing / Features KeyValue / Provider sync), table avec prix formaté + cycle badge + subs_count + filtres cycle/active
+    - `BillingSubscriptionResource` read-only (canCreate=false) : icon arrow-path, table avec status badge couleur (active=success, past_due=warning, canceled=danger), action "Cancel at period end" via `BillingGateway::cancelSubscription()`
+    - `BillingInvoiceResource` read-only : icon document-text, table avec amount + status badge + action "PDF" (visible si pdf_url)
+    - `BillingCouponResource` CRUD : icon ticket, form sections (Identity / Discount [percent_off OR amount_off] / Duration & limits / Provider sync), table avec discount affiché + redemptions
+  - **PHPStan ignoreErrors** : pattern HasMany covariance (Larastan upstream issue, idem BelongsTo)
+  - **Tests Pest** (21 nouveaux, +173 total → **173 / 434 assertions**) :
+    - DI bindings (2)
+    - Domain helpers `BillingSubscription::isActive()` (5 cas) + `BillingCoupon::isRedeemable()` (4 cas)
+    - PlaceholderStripeBillingGateway (createCheckoutSession persiste subscription, cancel atPeriodEnd preserves status, cancel immediate ends)
+    - IdempotentBillingWebhookProcessor (fresh insert, idempotent on retry, rejects empty event_id)
+    - HTTP `/api/v1/billing/webhooks/stripe` (accepts + persists, idempotent on retry)
+    - Filament admin reaches 5 routes (plans index, plans create, subscriptions, invoices, coupons)
+  - **Quality** : PHPStan No errors, Pint **320 files PASS**
+
 - Sprint 12 — Backup & Restore (Operations BC) :
   - **Migration `backups`** : audit table multi-tenant (FK `project_id` nullable → platform-wide null), enums `kind` (full/incremental/snapshot) + `target` (local/r2/b2/gdrive/borg) + `status` (running/succeeded/failed), `archive_path`, `size_bytes`, `checksum_sha256`, `manifest` JSON, `started_at`/`finished_at`, indexes `(project_id, kind)` + `(target, status)` + `finished_at`
   - **Eloquent `App\Models\Backup`** : constants `KIND_*` / `TARGET_*` / `STATUS_*`, casts `manifest` → `AsArrayObject`, helper `durationSeconds()`, BelongsTo Project

@@ -7,9 +7,14 @@ use App\Http\Controllers\Api\V1\Auth\EmailVerificationController;
 use App\Http\Controllers\Api\V1\Auth\MagicLinkController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\V1\Auth\TwoFactorController;
+use App\Http\Controllers\Api\V1\Billing\StripeWebhookController;
 use App\Http\Controllers\Api\V1\ProjectController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+// Public webhooks (Sprint 13.1) — no auth, signature verification added Sprint 16
+Route::post('v1/billing/webhooks/stripe', StripeWebhookController::class)
+    ->name('api.v1.billing.webhooks.stripe');
 
 // Public B2C auth (Sprint 6.5) — no auth required
 Route::prefix('v1/auth')->name('api.v1.auth.')->group(function (): void {
