@@ -126,7 +126,7 @@ it('mock GitHub adapter returns the expected coordinates for the project slug', 
         ->and($repo->defaultBranch)->toBe('main');
 });
 
-it('runs the full 5-step pipeline synchronously: status=building + metadata enriched', function (): void {
+it('runs the full 7-step pipeline synchronously: status=deployed + metadata enriched', function (): void {
     config(['queue.default' => 'sync']);
     Storage::fake('s3');
 
@@ -146,7 +146,8 @@ it('runs the full 5-step pipeline synchronously: status=building + metadata enri
 
     $row = EloquentProject::query()->find($project->id);
 
-    expect($row->status)->toBe('building');
+    // Sprint 15 + 16 chain steps 6 (content) + 7 (deploy) automatically.
+    expect($row->status)->toBe('deployed');
 
     $meta = (array) $row->metadata;
     expect($meta)->toHaveKey('analysis')
@@ -154,10 +155,14 @@ it('runs the full 5-step pipeline synchronously: status=building + metadata enri
         ->and($meta)->toHaveKey('design')
         ->and($meta)->toHaveKey('brief')
         ->and($meta)->toHaveKey('brief_score')
-        ->and($meta)->toHaveKey('github');
+        ->and($meta)->toHaveKey('github')
+        ->and($meta)->toHaveKey('content')
+        ->and($meta)->toHaveKey('deployment');
 
     expect($meta['brief_score']['passes'])->toBeTrue()
-        ->and($meta['github']['full_name'])->toBe('webfactory-org/full-pipeline');
+        ->and($meta['github']['full_name'])->toBe('webfactory-org/full-pipeline')
+        ->and($meta['deployment']['provider'])->toBe('placeholder')
+        ->and($meta['deployment']['live_url'])->toBe('https://full-pipeline.webfactory.test');
 });
 
 it('queues BuildBriefJob when DesignGenerated fires', function (): void {

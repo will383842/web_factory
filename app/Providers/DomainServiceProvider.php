@@ -10,6 +10,7 @@ use App\Application\Catalog\Services\BlueprintGenerationService;
 use App\Application\Catalog\Services\BriefBuilderService;
 use App\Application\Catalog\Services\BriefScorerService;
 use App\Application\Catalog\Services\ContentProductionService;
+use App\Application\Catalog\Services\DeploymentService;
 use App\Application\Catalog\Services\DesignGenerationService;
 use App\Application\Catalog\Services\GitHubRepositoryService;
 use App\Application\Catalog\Services\IdeaAnalysisService;
@@ -20,6 +21,7 @@ use App\Application\Identity\Services\SsoProviderRegistry;
 use App\Application\Marketing\Services\IndexNowPingService;
 use App\Application\Operations\Services\BackupService;
 use App\Domain\Catalog\Contracts\ProjectRepositoryInterface;
+use App\Domain\Catalog\Events\ContentProduced;
 use App\Domain\Catalog\Events\DesignGenerated;
 use App\Domain\Catalog\Events\GitHubRepositoryCreated;
 use App\Domain\Catalog\Events\ProjectCreated;
@@ -47,8 +49,10 @@ use App\Infrastructure\Pipeline\HeuristicDesignGenerationService;
 use App\Infrastructure\Pipeline\HeuristicIdeaAnalysisService;
 use App\Infrastructure\Pipeline\Listeners\StartBuildOnDesignGenerated;
 use App\Infrastructure\Pipeline\Listeners\StartContentProductionOnGitHubReady;
+use App\Infrastructure\Pipeline\Listeners\StartDeployOnContentProduced;
 use App\Infrastructure\Pipeline\Listeners\StartPipelineOnProjectCreated;
 use App\Infrastructure\Pipeline\MockGitHubRepositoryService;
+use App\Infrastructure\Pipeline\PlaceholderDeploymentService;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 
@@ -65,6 +69,7 @@ use Illuminate\Support\ServiceProvider;
  * Sprint 13.2: + SsoProviderRegistry (Google/Microsoft/Apple/Okta/GitHub placeholder drivers).
  * Sprint 13.4: + NotificationChannelRegistry (9 channels behind LogNotificationChannel placeholder).
  * Sprint 15: + ContentProductionService (pipeline step 6 — multilingue content from blueprint).
+ * Sprint 16: + DeploymentService (pipeline step 7 — production ship + IndexNow ping).
  */
 final class DomainServiceProvider extends ServiceProvider
 {
@@ -84,6 +89,9 @@ final class DomainServiceProvider extends ServiceProvider
 
         // Sprint 15 — Pipeline step 6 (Content production)
         $this->app->bind(ContentProductionService::class, HeuristicContentProductionService::class);
+
+        // Sprint 16 — Pipeline step 7 (Production deploy)
+        $this->app->bind(DeploymentService::class, PlaceholderDeploymentService::class);
 
         $this->app->bind(EmbeddingService::class, HeuristicEmbeddingService::class);
         $this->app->bind(KnowledgeBaseSearchService::class, PgVectorKnowledgeBase::class);
@@ -124,6 +132,7 @@ final class DomainServiceProvider extends ServiceProvider
         $events->listen(ProjectCreated::class, StartPipelineOnProjectCreated::class);
         $events->listen(DesignGenerated::class, StartBuildOnDesignGenerated::class);
         $events->listen(GitHubRepositoryCreated::class, StartContentProductionOnGitHubReady::class);
+        $events->listen(ContentProduced::class, StartDeployOnContentProduced::class);
 
         $events->listen(PagePublished::class, [IngestPublishedContentToKnowledgeBase::class, 'handlePagePublished']);
         $events->listen(ArticlePublished::class, [IngestPublishedContentToKnowledgeBase::class, 'handleArticlePublished']);
