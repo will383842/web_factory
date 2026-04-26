@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Application\Catalog\Services\ContentProductionService;
 use App\Application\Shared\Services\AudienceContextService;
 use App\Domain\Catalog\Contracts\ProjectRepositoryInterface;
+use App\Domain\Catalog\Entities\Project;
 use App\Domain\Catalog\Events\ContentProduced;
 use App\Domain\Catalog\Events\GitHubRepositoryCreated;
 use App\Domain\Shared\Contracts\EventDispatcher;
@@ -63,7 +64,7 @@ it('binds ContentProductionService to the heuristic adapter', function (): void 
 
 it('produces pages, articles and faqs across all locales', function (): void {
     $row = makeContentProject();
-    /** @var \App\Domain\Catalog\Entities\Project $project */
+    /** @var Project $project */
     $project = app(ProjectRepositoryInterface::class)->findById((string) $row->id);
 
     $bundle = app(ContentProductionService::class)->produce($project, ['fr-FR', 'en-US']);
@@ -88,7 +89,7 @@ it('falls back to a single home page when blueprint has no pages', function (): 
         'owner_id' => $owner->getKey(),
         'metadata' => ['blueprint' => ['pages' => [], 'journeys' => [], 'kpis' => []]],
     ]);
-    /** @var \App\Domain\Catalog\Entities\Project $project */
+    /** @var Project $project */
     $project = app(ProjectRepositoryInterface::class)->findById((string) $row->id);
 
     $bundle = app(ContentProductionService::class)->produce($project, ['fr-FR']);
@@ -99,7 +100,7 @@ it('falls back to a single home page when blueprint has no pages', function (): 
 
 it('updateOrCreate keeps idempotency on repeated runs', function (): void {
     $row = makeContentProject();
-    /** @var \App\Domain\Catalog\Entities\Project $project */
+    /** @var Project $project */
     $project = app(ProjectRepositoryInterface::class)->findById((string) $row->id);
 
     app(ContentProductionService::class)->produce($project, ['fr-FR']);

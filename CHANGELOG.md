@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 16 — Pipeline step 7 (production deploy) + ADRs swap-map :
+  - **Application port** `DeploymentService::deploy(Project)` + `provider()` — Sprint-16 default impl `PlaceholderDeploymentService` retourne `https://{slug}.webfactory.test`
+  - **DTO** `DeploymentResult` (success / provider / liveUrl / previewUrl / deploymentId / errorMessage)
+  - **Domain event** `ProjectDeployed`
+  - **Job** `DeployProjectJob` (queueable, 3 retries, backoff 120s) : deploy → metadata `deployment` → status transition `Building → Deployed` via `transitionTo()` (avec catch InvalidProjectStatusTransition pour mid-pipeline restarts) → dispatch event → IndexNow ping
+  - **Listener** `StartDeployOnContentProduced` chaîne `ContentProduced` → `DeployProjectJob` (étape 6 → 7 auto)
+  - **Pipeline complète end-to-end** : `ProjectCreated → analyze → blueprint → design → build → github → content → DEPLOY` en 7 étapes, status final = `deployed`
+  - **ADR 0042** : Deployment driver pattern (single binding via `WEBFACTORY_DEPLOY_DRIVER` env, alternatives Hetzner/Cloudflare-Pages/Vercel)
+  - **ADR 0043** : Sprint-16 placeholder swap-map (table 9 ports → real adapters : GitHub API, OpenAI embeddings, IndexNow HTTP, Borg+R2+B2 backup cascade, Stripe SDK, Stripe-Signature wrapping, Socialite SSO ×5, 9 notification channels, Hetzner deploy, Claude AI ×5)
+  - **Tests Pest** (4 nouveaux + 1 mis à jour, +229 total → **229 / 567 assertions**) :
+    - DI binding Placeholder
+    - Synthetic live URL
+    - Job persiste deployment + status=deployed + dispatch event + IndexNow ping
+    - Listener queue DeployProjectJob sur ContentProduced
+    - Sprint6 full-pipeline test étendu : 7 steps, status=deployed, metadata.content + metadata.deployment vérifiés
+  - **Quality** : PHPStan No errors, Pint **411 files PASS**
+
 - Sprint 15 — Pipeline step 6 (multilingual content production) :
   - **Application port** `ContentProductionService::produce(Project, locales)` — Sprint 19 swap → Claude-backed adapter
   - **DTO** `ContentBundle` (pageIds + articleIds + faqIds + producedLocales)
