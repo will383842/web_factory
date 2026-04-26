@@ -160,10 +160,24 @@ arch('Application Commands have a Command suffix')
         'App\Application\Analytics\Handlers',
         'App\Application\Ai\Handlers',
         'App\Application\Compliance\Handlers',
+        'App\Application\Identity\Services',
+        'App\Application\Catalog\Services',
+        'App\Application\Content\Services',
+        'App\Application\Marketing\Services',
+        'App\Application\Billing\Services',
+        'App\Application\Communication\Services',
+        'App\Application\Search\Services',
+        'App\Application\Analytics\Services',
+        'App\Application\Ai\Services',
+        'App\Application\Compliance\Services',
     ]);
 
 arch('Application Handlers have a Handler suffix')
     ->expect('App\Application\Identity\Handlers')
+    ->toHaveSuffix('Handler');
+
+arch('Application Catalog Handlers have a Handler suffix')
+    ->expect('App\Application\Catalog\Handlers')
     ->toHaveSuffix('Handler');
 
 // ---------------------------------------------------------------------------
