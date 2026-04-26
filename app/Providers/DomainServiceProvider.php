@@ -12,6 +12,7 @@ use App\Application\Catalog\Services\BriefScorerService;
 use App\Application\Catalog\Services\DesignGenerationService;
 use App\Application\Catalog\Services\GitHubRepositoryService;
 use App\Application\Catalog\Services\IdeaAnalysisService;
+use App\Application\Communication\Services\NotificationChannelRegistry;
 use App\Application\Content\Services\EmbeddingService;
 use App\Application\Content\Services\KnowledgeBaseSearchService;
 use App\Application\Identity\Services\SsoProviderRegistry;
@@ -26,6 +27,7 @@ use App\Domain\Identity\Contracts\UserRepositoryInterface;
 use App\Domain\Shared\Contracts\EventDispatcher;
 use App\Infrastructure\Billing\IdempotentBillingWebhookProcessor;
 use App\Infrastructure\Billing\PlaceholderStripeBillingGateway;
+use App\Infrastructure\Communication\LogNotificationChannel;
 use App\Infrastructure\Content\HeuristicEmbeddingService;
 use App\Infrastructure\Content\Listeners\IngestPublishedContentToKnowledgeBase;
 use App\Infrastructure\Content\PgVectorKnowledgeBase;
@@ -57,6 +59,7 @@ use Illuminate\Support\ServiceProvider;
  * Sprint 12: + BackupService (local-filesystem placeholder).
  * Sprint 13.1: + BillingGateway + BillingWebhookProcessor (Stripe placeholder + idempotent webhook intake).
  * Sprint 13.2: + SsoProviderRegistry (Google/Microsoft/Apple/Okta/GitHub placeholder drivers).
+ * Sprint 13.4: + NotificationChannelRegistry (9 channels behind LogNotificationChannel placeholder).
  */
 final class DomainServiceProvider extends ServiceProvider
 {
@@ -92,6 +95,16 @@ final class DomainServiceProvider extends ServiceProvider
             $registry = new SsoProviderRegistry;
             foreach (['google', 'microsoft', 'apple', 'okta', 'github'] as $name) {
                 $registry->register(new PlaceholderSsoProvider($name));
+            }
+
+            return $registry;
+        });
+
+        // Sprint 13.4 — Communication / Notifications (9 channels behind Log placeholder)
+        $this->app->singleton(NotificationChannelRegistry::class, function (): NotificationChannelRegistry {
+            $registry = new NotificationChannelRegistry;
+            foreach (['in_app', 'email', 'sms', 'whatsapp', 'push_web', 'push_mob', 'telegram', 'slack', 'discord'] as $name) {
+                $registry->register(new LogNotificationChannel($name));
             }
 
             return $registry;

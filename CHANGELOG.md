@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 13.4 — Notifications multi-channel (Communication BC) :
+  - **3 migrations** : `notification_templates` (per project/event_type/channel/locale, unique combo), `notification_preferences` (per user/channel/event_type, opt-in/out), `notification_dispatches` (audit log, 6 STATUS_*, external_id pour delivery webhooks)
+  - **3 Eloquent models** : `NotificationTemplate` (helper `render($payload)` substitue `{{ var }}` placeholders), `NotificationPreference`, `NotificationDispatch`
+  - **Application port** `NotificationChannel` (interface : `name()` + `send()`)
+  - **DTOs** : `NotificationMessage` (provider-agnostic shape), `DispatchResult` (success/externalId/errorMessage)
+  - **`NotificationChannelRegistry`** (driver-pattern lookup, throw InvalidArgumentException sur unknown)
+  - **`NotificationDispatcher`** : 4-step pipeline (1) preference check → SKIPPED si opt-out non-transactionnel, (2) template lookup project-scoped > platform-wide, (3) render placeholders, (4) délègue au channel + persist NotificationDispatch
+  - **TRANSACTIONAL_EVENTS** const (5 events bypass opt-out matrix : password_reset, email_verification, login_anomaly, payment_failed, invoice_paid — RGPD-compliant car légalement requis)
+  - **Adapter Sprint-13.4** `LogNotificationChannel` : 1 instance par channel name, écrit `Log::info('notification.sent')` + retourne external_id synthétique — Sprint 16 swap → Postmark/Twilio/OneSignal/etc.
+  - **DomainServiceProvider** : binding singleton `NotificationChannelRegistry` avec **9 channels** (in_app, email, sms, whatsapp, push_web, push_mob, telegram, slack, discord) tous derrière `LogNotificationChannel`
+  - **Filament admin (groupe "Communication")** :
+    - `NotificationTemplateResource` CRUD : icon bell-alert, form Identity (project/event_type/channel/locale) + Content (subject/body avec placeholder helper), table avec event_type + channel + locale + filters
+    - `NotificationDispatchResource` read-only (canCreate=false) : icon paper-airplane, table avec status badge couleur (sent/delivered=success, queued=gray, skipped=warning, failed/bounced=danger) + filters status + channel
+  - **PHPStan refactor** : désactivation `checkModelProperties: true` (produisait 230+ false positives sur Eloquent models sans `@property` docblocks complets — non-standard Laravel) + ajout patterns d'ignore pour `Access to an undefined property App\Models\*` et `App\Http\Resources\*` (résolus runtime via Eloquent `__get`) + Pest expect()->and() generic resolution noise
+  - **Tests Pest** (11 nouveaux, +211 total → **211 / 510 assertions**) :
+    - Registry (9 channels enregistrés + throw on unknown)
+    - NotificationTemplate::render() substitue placeholders
+    - Dispatcher 5 cas : sent normal, skipped opt-out, transactional bypass opt-out, failed sans template, project-scoped > platform-wide
+    - Filament admin reaches 3 routes
+  - **Quality** : PHPStan No errors, Pint **388 files PASS**
+
 - Sprint 13.3 — Onboarding flows + activation score (Marketing BC) :
   - **2 migrations** : `onboarding_flows` (FK project_id nullable, slug+project unique, audience enum + steps JSON), `user_onboarding_progress` (unique user+flow, score 0-100, completed_steps JSON, started_at/completed_at)
   - **2 Eloquent models** : `OnboardingFlow` (3 const AUDIENCE_*, casts steps → AsArrayObject), `UserOnboardingProgress` (relations user+flow)
