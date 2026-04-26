@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 6 — Pipeline orchestrator étapes 4-5 :
+  - **Domain Events Catalog** : `BriefBuilt`, `BriefScored`, `GitHubRepositoryCreated`
+  - **Exception** : `BriefScoreTooLowException` (gate ≥85)
+  - **Application DTOs** : `BriefBundle` (files map + checksum), `BriefScore` (score + gaps + strengths + threshold const), `GitHubRepoInfo`
+  - **Application service ports** : `BriefBuilderService`, `BriefScorerService`, `GitHubRepositoryService`
+  - **Infrastructure adapters Sprint 6 (heuristic / mock)** :
+    - `HeuristicBriefBuilderService` — produit ≥35 fichiers (README, blueprint.json, design tokens, page briefs, mockups, .env.example, configs templates, 10 instructions docs/)
+    - `HeuristicBriefScorerService` — score 6 axes (présence requis 40pts, page briefs 15pts, mockups 15pts, README body 10pts, virality≥60 10pts, value≥50 10pts) avec gaps/strengths
+    - `MockGitHubRepositoryService` — coordonnées `webfactory-org/{slug}` déterministes
+  - **Horizon Jobs** chainés (3 retries + 30/60s backoff) :
+    - `BuildBriefJob` step 4a : transition Designing→Building, Storage::disk('s3')->put projects/{id}/brief.json, dispatch BriefBuilt, chain ScoreBriefJob
+    - `ScoreBriefJob` step 4b : score le brief, dispatch BriefScored ; **throws BriefScoreTooLowException si <85** (gate), sinon chain InitGitHubRepoJob
+    - `InitGitHubRepoJob` step 5 : crée le repo GitHub (mock) + dispatch GitHubRepositoryCreated
+  - **Listener** `StartBuildOnDesignGenerated` chaîne auto Sprint 5→6 sur DesignGenerated
+  - **DomainServiceProvider** : 3 nouveaux bindings + 1 listener (boot)
+  - **Tests Pest** (7 nouveaux, +84 total → **84 / 208 assertions**) :
+    - Sprint 6 BriefBuilder ≥35 files + checksum sha1, Scorer accepts/rejects, Mock GitHub coords, **full pipeline 1-5 sync → status=building + 6 metadata keys**, BuildBriefJob queued on DesignGenerated, BriefBuilt+BriefScored+GitHubRepositoryCreated chain dispatch
+  - Sprint-5 pipeline test renommé pour ne plus exiger status=designing (pipeline va jusqu'à building désormais)
+
+
 - Sprint 5 — Pipeline orchestrator (étapes 1-3) :
   - **Domain Events** Catalog : `IdeaAnalyzed`, `BlueprintGenerated`, `DesignGenerated`
   - **Application DTOs** : `IdeaAnalysisResult` (virality+value+clarifications+strengths+weaknesses),

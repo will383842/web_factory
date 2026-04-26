@@ -15,6 +15,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -37,8 +38,12 @@ it('queues AnalyzeProjectIdeaJob right after project creation', function (): voi
     Bus::assertDispatched(AnalyzeProjectIdeaJob::class);
 });
 
-it('runs the full 3-step pipeline synchronously and lands at status=designing', function (): void {
+it('runs steps 1-3 synchronously and produces analysis/blueprint/design metadata', function (): void {
+    // Sprint-5 scope test: only verify that steps 1-3 produce their metadata
+    // payloads. Steps 4-5 (Sprint 6) chain right after; the full S0->Building
+    // assertion lives in Sprint6PipelineChainTest.
     config(['queue.default' => 'sync']);
+    Storage::fake('s3');
 
     $owner = User::factory()->create();
 
@@ -56,8 +61,7 @@ it('runs the full 3-step pipeline synchronously and lands at status=designing', 
 
     $row = EloquentProject::query()->find($domainProject->id);
 
-    expect($row->status)->toBe('designing')
-        ->and($row->virality_score)->toBeGreaterThan(0)
+    expect($row->virality_score)->toBeGreaterThan(0)
         ->and($row->value_score)->toBeGreaterThan(0);
 
     $meta = (array) $row->metadata;
