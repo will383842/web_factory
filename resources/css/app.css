@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+/*
+ * WebFactory design tokens (placeholders).
+ * Real tokens (10 Lemmens generations) will be wired in Sprint 14 (Apparence module).
+ */
+@theme {
+  /* Brand colors (placeholder neutral) */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+  --color-brand-950: #1e1b4b;
+
+  /* Semantic surface tokens */
+  --color-surface: var(--color-white);
+  --color-surface-muted: var(--color-gray-50);
+  --color-surface-strong: var(--color-gray-100);
+
+  /* Typography */
+  --font-sans: 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif';
+  --font-mono: 'JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace';
+
+  /* Radius scale */
+  --radius-card: 0.75rem;
+
+  /* Spacing scale extension */
+  --spacing-13: 3.25rem;
+
+  /* Animation easing */
+  --ease-snappy: cubic-bezier(0.2, 0.9, 0.1, 1);
+}
+
+/* Base resets */
+:root {
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface-muted);
+}
+
+/* Utility: keep focus rings visible without being garish */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}

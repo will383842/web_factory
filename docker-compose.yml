@@ -1,0 +1,204 @@
+name: webfactory
+
+x-app-base: &app-base
+  build:
+    context: .
+    dockerfile: docker/php/Dockerfile
+    target: app
+  image: webfactory/app:dev
+  env_file: .env
+  volumes:
+    - ./:/var/www/html:cached
+    - wf-vendor:/var/www/html/vendor
+    - wf-node-modules:/var/www/html/node_modules
+  depends_on:
+    wf-postgres:
+      condition: service_healthy
+    wf-redis-cache:
+      condition: service_healthy
+    wf-redis-sessions:
+      condition: service_healthy
+    wf-meili:
+      condition: service_healthy
+    wf-minio:
+      condition: service_healthy
+  restart: unless-stopped
+  networks:
+    - wf
+
+services:
+
+  wf-app:
+    <<: *app-base
+    container_name: wf-app
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm -t || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  wf-horizon:
+    <<: *app-base
+    container_name: wf-horizon
+    command: ["php", "artisan", "horizon"]
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan horizon:status | grep -q running || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  wf-scheduler:
+    <<: *app-base
+    container_name: wf-scheduler
+    command: ["sh", "-c", "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'schedule:run' || pgrep -f 'sleep' || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  wf-reverb:
+    <<: *app-base
+    container_name: wf-reverb
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(@fsockopen(\"127.0.0.1\", 8080) !== false ? 0 : 1);'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  wf-postgres:
+    image: postgres:16-alpine
+    container_name: wf-postgres
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-webfactory}
+      POSTGRES_USER: ${DB_USERNAME:-webfactory}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - wf-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-webfactory} -d ${DB_DATABASE:-webfactory}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - wf
+
+  wf-redis-cache:
+    image: redis:7-alpine
+    container_name: wf-redis-cache
+    command: ["redis-server", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru", "--save", ""]
+    ports:
+      - "6379:6379"
+    volumes:
+      - wf-redis-cache-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - wf
+
+  wf-redis-sessions:
+    image: redis:7-alpine
+    container_name: wf-redis-sessions
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction", "--appendonly", "yes"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - wf-redis-sessions-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - wf
+
+  wf-meili:
+    image: getmeili/meilisearch:v1.6
+    container_name: wf-meili
+    environment:
+      MEILI_ENV: ${MEILI_ENV:-development}
+      MEILI_MASTER_KEY: ${MEILISEARCH_KEY:-local_dev_master_key_change_me}
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
+    volumes:
+      - wf-meili-data:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:7700/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - wf
+
+  wf-minio:
+    image: minio/minio:latest
+    container_name: wf-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-webfactory}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-secret_change_me_local_only}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - wf-minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - wf
+
+  wf-nginx:
+    image: nginx:1.27-alpine
+    container_name: wf-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./public:/var/www/html/public:ro
+    depends_on:
+      wf-app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1/up || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - wf
+
+networks:
+  wf:
+    driver: bridge
+
+volumes:
+  wf-postgres-data:
+  wf-redis-cache-data:
+  wf-redis-sessions-data:
+  wf-meili-data:
+  wf-minio-data:
+  wf-vendor:
+  wf-node-modules:

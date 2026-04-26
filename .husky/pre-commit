@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# WebFactory pre-commit hook
+# Runs lint-staged from local node_modules (installed inside the wf-app container).
+# On the Windows host node_modules is not bind-mounted, so we gracefully skip.
+
+if [ ! -x "$(command -v npx)" ]; then
+  echo "[husky] skipping pre-commit: npx not on PATH."
+  exit 0
+fi
+
+if [ ! -x "node_modules/.bin/lint-staged" ]; then
+  echo "[husky] skipping pre-commit: lint-staged not in host node_modules (container-only install)."
+  exit 0
+fi
+
+npx --no-install lint-staged

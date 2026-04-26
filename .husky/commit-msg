@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+# WebFactory commit-msg hook
+# Validates the commit message against Conventional Commits via commitlint.
+
+if [ ! -x "$(command -v npx)" ]; then
+  echo "[husky] skipping commit-msg: npx not on PATH."
+  exit 0
+fi
+
+if [ ! -x "node_modules/.bin/commitlint" ]; then
+  echo "[husky] skipping commit-msg: commitlint not in host node_modules (container-only install)."
+  exit 0
+fi
+
+npx --no-install commitlint --edit "$1"

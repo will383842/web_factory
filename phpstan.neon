@@ -1,0 +1,46 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 8
+    paths:
+        - app
+        - tests
+        - database/seeders
+    excludePaths:
+        - app/Filament/Resources/*/Pages/*
+        - bootstrap/cache/*
+
+    checkOctaneCompatibility: true
+    checkModelProperties: true
+    noUnnecessaryCollectionCall: true
+    noUnnecessaryCollectionCallOnly: []
+    noUnnecessaryCollectionCallExcept: []
+
+    ignoreErrors:
+        # Pest test files use the global "test()" / "it()" / "expect()" helpers
+        - identifier: missingType.parameter
+          paths:
+            - tests/*
+        # arch() helper and Pest dynamic API (TestCall->expect/preset/get/...)
+        - '#Call to an undefined (method|static method) Pest\\.*#'
+        # Pest dynamic Laravel test methods ($this->get, $this->post, ...) on TestCall
+        - '#Call to an undefined method Pest\\PendingCalls\\TestCall::.*#'
+        # Trivial Laravel default test
+        - identifier: method.alreadyNarrowedType
+          path: tests/Unit/ExampleTest.php
+        # Seeder $this->command is nullable at runtime in Laravel (set only via artisan)
+        - '#Using nullsafe method call on non-nullable type Illuminate\\Console\\Command\.#'
+        # env() is legitimate in seeders for local dev credentials
+        - identifier: larastan.noEnvCallsOutsideOfConfig
+          path: database/seeders/*
+        # request() returns a real Request via container in HTTP context, null in CLI/queue;
+        # nullsafe is intentional defensive coding
+        - '#Using nullsafe method call on non-nullable type Illuminate\\Http\\Request\.#'
+        # Telescope default gate has an empty allowlist that we fill at deploy time
+        - identifier: function.impossibleType
+          path: app/Providers/TelescopeServiceProvider.php
+
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false
