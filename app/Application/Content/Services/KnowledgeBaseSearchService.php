@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Application\Content\Services;
 
-use App\Infrastructure\Content\PgVectorKnowledgeBase;
-
 /**
  * Port for KB search.
  *
- * Sprint-7 default impl: {@see PgVectorKnowledgeBase}
- * which uses pgvector cosine distance under the hood.
+ * Sprint-7 default impl lives in App\Infrastructure\Content (PgVector
+ * adapter) — avoid the direct `use` import here, Application must not
+ * depend on Infrastructure (ADR 0008 hexagonal ports & adapters).
  */
 interface KnowledgeBaseSearchService
 {
