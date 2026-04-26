@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\TenantContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,7 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Sprint 9 — Multi-tenant audit: tag every API request with the
+        // current project_id so KB search, sitemap, internal-links etc.
+        // scope automatically.
+        $middleware->api(append: [
+            TenantContext::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

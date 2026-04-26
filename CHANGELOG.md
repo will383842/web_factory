@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 9 — Multi-tenancy + Multilingue + AudienceContext :
+  - **AudienceContext DTO** : locale + countryCode + currency + primaryBank + popularCities + localCompetitors + dateFormat + phoneFormat
+  - **AudienceContextService** : 13 contextes pré-câblés (fr-FR/BNP/EUR, fr-CA/Desjardins/CAD, en-US/Chase/USD, en-GB/Barclays/GBP, en-IN/SBI/INR, es-ES/Santander/EUR, es-MX/Banamex/MXN, ar-MA/Attijariwafa/MAD, ar-SA/Al Rajhi/SAR, hi-IN/HDFC/INR, pt-BR/Itaú/BRL, de-DE/Deutsche Bank/EUR, zh-CN/工商银行/CNY) + fallback cascade : exact match → same-language any-region → en-US default
+  - **TenantContext middleware** : extrait `project_id` depuis (1) `X-Project-Id` header, (2) route binding `{project}`, (3) user owned project (fallback) ; tag `app('tenant.project_id')` + `Log::withContext` pour audit ; appliqué automatiquement à toutes les routes API via `bootstrap/app.php`
+  - **Tests Pest** (12 nouveaux, +133 total → **133 / 351 assertions**) :
+    - AudienceContext : 8 tests (fr-FR BNP, fr-CA Desjardins, ar-MA Attijariwafa, en-IN SBI, fallback xx-YY → en-US, fallback "fr" → fr-FR, supportedLocales, toArray roundtrip)
+    - TenantContext middleware : 4 tests (header X-Project-Id, fallback user owned, anonymous null, header > user precedence)
+
 - Sprint 8 — SEO/AEO Engine (Marketing BC) :
   - **DTOs** : `JsonLdSchema`, `HreflangAlternate`, `SitemapEntry`, `InternalLinkSuggestion`
   - **JsonLdGenerator** : 5 schémas schema.org (`WebSite` avec `SearchAction`, `Organization`, `Article`, `FAQPage` AEO-essential, `BreadcrumbList`)
