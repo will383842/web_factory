@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 14 — Automation request capture + public layout primitives (Marketing BC) :
+  - **Migration `automation_requests`** : multi-tenant FK project_id nullable, fields first_name / last_name / email / phone_country_code+phone_number / company / category / message / rgpd_accepted, 5 STATUS_* (new/contacted/qualified/won/lost), tracking ip_address + user_agent + source + utm JSON
+  - **Eloquent `AutomationRequest`** : helpers `fullName()` + `fullPhone()`
+  - **Domain Marketing event** `AutomationRequested`
+  - **Application service** `AutomationRequestService::submit()` : transaction → persist + dispatch event (NotificationDispatcher fan-out déjà câblé Sprint 13.4)
+  - **HTTP** `POST /api/v1/automation-requests` (throttle 30/60s) avec validation stricte (RGPD accepted, phone country code regex, message ≥10 chars, email RFC)
+  - **Filament `AutomationRequestResource`** read-only : icon inbox, navigation group "Marketing", table avec status badge couleur (new=warning, won=success, lost=danger), action "Mark contacted"
+  - **Public Blade** :
+    - `resources/views/layouts/public.blade.php` (layout SaaS WebFactory) avec CSS variables injection depuis `AppearanceSettings` (Sprint 11), CTA "Request automation" déclenche modale `<dialog>` HTML5
+    - `resources/views/public/home.blade.php` : H1 + intro + bloc AeoAnswer + CTA
+    - **`<x-aeo-answer>` Blade component** (Spec 14 §2.1) : props question/answer/bullets, structure pour AI assistants (ChatGPT/Perplexity/Google AI Overview)
+  - **Routes** : `GET /` → `public.home`, `POST /api/v1/automation-requests` → controller
+  - **Tests Pest** (8 nouveaux, +219 total → **219 / 535 assertions**) :
+    - Service persists + dispatches AutomationRequested event
+    - HTTP 201 sur payload valide, 422 sur rgpd manquant / phone invalide / message trop court
+    - GET / rend home avec aeo-answer block + automation modal trigger
+    - Filament admin reaches /admin/automation-requests
+  - **Note** : Les 8 templates Spec 14 (Landing/Blog/FAQ/Help/Legal/Contact/404) sont GÉNÉRÉS par le pipeline Sprint 6 (BriefBuilder) pour chaque site sortant — seul le layout WebFactory lui-même est livré ici. Les composants atoms/molecules/organisms relèvent du brief par-site.
+  - **Quality** : PHPStan No errors, Pint **397 files PASS**
+
 - Sprint 13.4 — Notifications multi-channel (Communication BC) :
   - **3 migrations** : `notification_templates` (per project/event_type/channel/locale, unique combo), `notification_preferences` (per user/channel/event_type, opt-in/out), `notification_dispatches` (audit log, 6 STATUS_*, external_id pour delivery webhooks)
   - **3 Eloquent models** : `NotificationTemplate` (helper `render($payload)` substitue `{{ var }}` placeholders), `NotificationPreference`, `NotificationDispatch`
