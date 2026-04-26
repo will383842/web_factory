@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 12 — Backup & Restore (Operations BC) :
+  - **Migration `backups`** : audit table multi-tenant (FK `project_id` nullable → platform-wide null), enums `kind` (full/incremental/snapshot) + `target` (local/r2/b2/gdrive/borg) + `status` (running/succeeded/failed), `archive_path`, `size_bytes`, `checksum_sha256`, `manifest` JSON, `started_at`/`finished_at`, indexes `(project_id, kind)` + `(target, status)` + `finished_at`
+  - **Eloquent `App\Models\Backup`** : constants `KIND_*` / `TARGET_*` / `STATUS_*`, casts `manifest` → `AsArrayObject`, helper `durationSeconds()`, BelongsTo Project
+  - **Application port** `App\Application\Operations\Services\BackupService` : interface stable (`run` / `targetName` / `restore`) — Sprint 16 swap → BorgBackup / R2 / B2 sans toucher au code appelant
+  - **DTO** `App\Application\Operations\DTOs\BackupResult` : readonly success/archivePath/sizeBytes/checksumSha256/manifest/errorMessage
+  - **Adapter Sprint-12** `App\Infrastructure\Operations\LocalFilesystemBackupService` : écrit un manifeste JSON des fichiers brief S3 d'un projet vers `local::backups/{kind}/{stamp}-{ulid}.json`, calcule SHA-256, target `local`
+  - **Orchestrator** `App\Application\Operations\Services\BackupRunner` : crée la ligne d'audit `STATUS_RUNNING`, délègue à l'adapter, capture les exceptions et marque `STATUS_FAILED`, retourne le `Backup` persisté (Sprint 16 → cascade multi-target)
+  - **DomainServiceProvider** : binding `BackupService` → `LocalFilesystemBackupService`
+  - **Filament `BackupResource`** read-only (canCreate=false, pas d'EditAction) : icon `archive-box-arrow-down`, navigation group "Operations", colonnes id/project/kind/target/status (badge couleur succeeded=success/failed=danger/running=warning) + size_bytes + archive_path + timestamps, filtres status/kind/target, default sort `id desc`
+  - **Header action custom "Run backup"** dans `ListBackups` : Schema Filament v4 (Select kind + Select project optionnel) → `BackupRunner::run()` synchrone, notification success/danger
+  - **ArchTest** : ignoring `App\Application\Operations\{DTOs,Services}` du Command-suffix rule
+  - **Tests Pest** (6 nouveaux, +152 total → **152 / 389 assertions**) :
+    - Binding container `BackupService` → `LocalFilesystemBackupService`
+    - Adapter écrit un manifeste valide sur disque local + checksum SHA-256
+    - BackupRunner persiste status=succeeded + target=local + timestamps
+    - BackupRunner accepte project_id null (platform-wide)
+    - BackupRunner capture exception adapter → status=failed + error_message
+    - Admin reaches `/admin/backups` index
+  - **Quality** : PHPStan No errors, Pint **278 files PASS**, ArchTest **27 / 49 assertions**
+
 - Sprint 11 — Modules avancés (News + Apparence + SEO Hub) :
   - **News module** (time-sensitive content) :
     - Migration `news` table multi-tenant (FK project_id, expires_at index)

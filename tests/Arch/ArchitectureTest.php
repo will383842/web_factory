@@ -173,6 +173,9 @@ arch('Application Commands have a Command suffix')
         // Sprint 9 — Shared kernel application layer (DTOs + Services)
         'App\Application\Shared\DTOs',
         'App\Application\Shared\Services',
+        // Sprint 12 — Operations (Backups) application layer
+        'App\Application\Operations\DTOs',
+        'App\Application\Operations\Services',
     ]);
 
 arch('Application Handlers have a Handler suffix')
