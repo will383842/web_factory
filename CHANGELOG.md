@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 10 — Filament Content modules (CRUD admin Page/Article/FAQ) :
+  - **PageResource** : navigation group "Content", icon document-text, form 3 sections (Identity / Type & status / Content + KeyValue meta tags + textarea content_blocks JSON), table avec status/type/locale badges + 3 filtres
+  - **ArticleResource** : icon newspaper, form 4 sections (Identity / Content avec body live afterStateUpdated → auto word_count + reading_time / SEO TagsInput keywords + is_pillar toggle / Stats computed read-only), table avec is_pillar boolean column + 3 filtres incl. TernaryFilter pillar
+  - **FaqResource** : icon question-mark-circle, form 3 sections (Q&A / Categorization / Engagement read-only), table searchable question + filtres
+  - 9 routes Filament : `/admin/{pages,articles,faqs}` × {index, create, edit}
+  - **Tests Pest** (5 nouveaux, +138 total → **138 / 356 assertions**) : admin reaches Pages/Articles/FAQs index + Page create form, plain user role 403 forbidden
+  - Quality : PHPStan No errors, Pint **253 files PASS**
+
 - Sprint 9 — Multi-tenancy + Multilingue + AudienceContext :
   - **AudienceContext DTO** : locale + countryCode + currency + primaryBank + popularCities + localCompetitors + dateFormat + phoneFormat
   - **AudienceContextService** : 13 contextes pré-câblés (fr-FR/BNP/EUR, fr-CA/Desjardins/CAD, en-US/Chase/USD, en-GB/Barclays/GBP, en-IN/SBI/INR, es-ES/Santander/EUR, es-MX/Banamex/MXN, ar-MA/Attijariwafa/MAD, ar-SA/Al Rajhi/SAR, hi-IN/HDFC/INR, pt-BR/Itaú/BRL, de-DE/Deutsche Bank/EUR, zh-CN/工商银行/CNY) + fallback cascade : exact match → same-language any-region → en-US default
