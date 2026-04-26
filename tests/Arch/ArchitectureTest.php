@@ -295,4 +295,11 @@ arch('php best practices')
 
 arch('security baseline')
     ->preset()
-    ->security();
+    ->security()
+    ->ignoring([
+        // Laravel's MustVerifyEmail flow hashes the email with sha1 in its
+        // built-in verification URL — we must match the same algorithm to
+        // validate signed verification links. This is interop, not security
+        // (the URL is also signed via APP_KEY).
+        'App\\Http\\Controllers\\Api\\V1\\Auth\\EmailVerificationController',
+    ]);
