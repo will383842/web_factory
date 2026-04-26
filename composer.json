@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.3",
         "filament/filament": "^4.0",
+        "filament/spatie-laravel-settings-plugin": "^4.11",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/framework": "^13.0",
         "laravel/horizon": "^5.46",
@@ -20,7 +21,8 @@
         "meilisearch/meilisearch-php": "^1.16",
         "predis/predis": "^3.4",
         "sentry/sentry-laravel": "^4.25",
-        "spatie/laravel-permission": "^7.3"
+        "spatie/laravel-permission": "^7.3",
+        "spatie/laravel-settings": "^3.7"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

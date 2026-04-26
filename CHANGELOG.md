@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 3 — Console Filament base:
+  - **`spatie/laravel-settings` v3.7** + **`filament/spatie-laravel-settings-plugin` v4.11** installed
+  - `App\Settings\GeneralSettings` (siteName, siteTagline, supportEmail, defaultLocale, maintenanceMode)
+    — persisted in the `settings` table (group `general`), JSON payload, cached
+  - Settings migration `2026_04_26_160000_create_general_settings.php` with default values
+  - **Filament admin enhancements** in `AdminPanelProvider`:
+    - `->profile()` — user profile page at `/admin/profile`
+    - `->darkMode()` — dark/light theme toggle persisted in user prefs
+    - `->sidebarCollapsibleOnDesktop()` — better UX on wide screens
+  - **Filament admin pages**:
+    - `Pages/ManageGeneralSettings` — 3-section form (Branding / Contact & locale / Operations)
+      mounted at `/admin/manage-general-settings`
+  - **Filament resources**:
+    - `Resources/Users/UserResource` upgraded — sectioned form (Identity / Authentication / Authorization),
+      role assignment via CheckboxList, password hash on dehydrate (optional on edit), role badges in table,
+      filter by role, sort by id desc
+    - `Resources/Roles/RoleResource` (new) — CRUD over `Spatie\Permission\Models\Role`,
+      permission CheckboxList, permissions_count + users_count columns, sort by name
+  - **Tests Pest** (9 new, +46 total → 46 / 85 assertions):
+    - `Console/GeneralSettingsTest` (3): default values, save/reload roundtrip, group()
+    - `Console/AdminPanelRoutesTest` (6): /admin redirect to login, /admin/login 200, admin role
+      reaches /admin/users + /admin/roles + /admin/manage-general-settings, "user" role 403s
+
 - Sprint 2 — Identity BC implementation (pragmatic core):
   - **Eloquent adapter** for Identity:
     - `app/Infrastructure/Persistence/Eloquent/Mappers/UserMapper` — Domain ↔ Eloquent translation
