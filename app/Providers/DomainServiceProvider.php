@@ -9,6 +9,7 @@ use App\Application\Billing\Services\BillingWebhookProcessor;
 use App\Application\Catalog\Services\BlueprintGenerationService;
 use App\Application\Catalog\Services\BriefBuilderService;
 use App\Application\Catalog\Services\BriefScorerService;
+use App\Application\Catalog\Services\ContentProductionService;
 use App\Application\Catalog\Services\DesignGenerationService;
 use App\Application\Catalog\Services\GitHubRepositoryService;
 use App\Application\Catalog\Services\IdeaAnalysisService;
@@ -20,6 +21,7 @@ use App\Application\Marketing\Services\IndexNowPingService;
 use App\Application\Operations\Services\BackupService;
 use App\Domain\Catalog\Contracts\ProjectRepositoryInterface;
 use App\Domain\Catalog\Events\DesignGenerated;
+use App\Domain\Catalog\Events\GitHubRepositoryCreated;
 use App\Domain\Catalog\Events\ProjectCreated;
 use App\Domain\Content\Events\ArticlePublished;
 use App\Domain\Content\Events\PagePublished;
@@ -40,9 +42,11 @@ use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentUserRepository;
 use App\Infrastructure\Pipeline\HeuristicBlueprintGenerationService;
 use App\Infrastructure\Pipeline\HeuristicBriefBuilderService;
 use App\Infrastructure\Pipeline\HeuristicBriefScorerService;
+use App\Infrastructure\Pipeline\HeuristicContentProductionService;
 use App\Infrastructure\Pipeline\HeuristicDesignGenerationService;
 use App\Infrastructure\Pipeline\HeuristicIdeaAnalysisService;
 use App\Infrastructure\Pipeline\Listeners\StartBuildOnDesignGenerated;
+use App\Infrastructure\Pipeline\Listeners\StartContentProductionOnGitHubReady;
 use App\Infrastructure\Pipeline\Listeners\StartPipelineOnProjectCreated;
 use App\Infrastructure\Pipeline\MockGitHubRepositoryService;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -60,6 +64,7 @@ use Illuminate\Support\ServiceProvider;
  * Sprint 13.1: + BillingGateway + BillingWebhookProcessor (Stripe placeholder + idempotent webhook intake).
  * Sprint 13.2: + SsoProviderRegistry (Google/Microsoft/Apple/Okta/GitHub placeholder drivers).
  * Sprint 13.4: + NotificationChannelRegistry (9 channels behind LogNotificationChannel placeholder).
+ * Sprint 15: + ContentProductionService (pipeline step 6 — multilingue content from blueprint).
  */
 final class DomainServiceProvider extends ServiceProvider
 {
@@ -76,6 +81,9 @@ final class DomainServiceProvider extends ServiceProvider
         $this->app->bind(BriefBuilderService::class, HeuristicBriefBuilderService::class);
         $this->app->bind(BriefScorerService::class, HeuristicBriefScorerService::class);
         $this->app->bind(GitHubRepositoryService::class, MockGitHubRepositoryService::class);
+
+        // Sprint 15 — Pipeline step 6 (Content production)
+        $this->app->bind(ContentProductionService::class, HeuristicContentProductionService::class);
 
         $this->app->bind(EmbeddingService::class, HeuristicEmbeddingService::class);
         $this->app->bind(KnowledgeBaseSearchService::class, PgVectorKnowledgeBase::class);
@@ -115,6 +123,7 @@ final class DomainServiceProvider extends ServiceProvider
     {
         $events->listen(ProjectCreated::class, StartPipelineOnProjectCreated::class);
         $events->listen(DesignGenerated::class, StartBuildOnDesignGenerated::class);
+        $events->listen(GitHubRepositoryCreated::class, StartContentProductionOnGitHubReady::class);
 
         $events->listen(PagePublished::class, [IngestPublishedContentToKnowledgeBase::class, 'handlePagePublished']);
         $events->listen(ArticlePublished::class, [IngestPublishedContentToKnowledgeBase::class, 'handleArticlePublished']);

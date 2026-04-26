@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 15 — Pipeline step 6 (multilingual content production) :
+  - **Application port** `ContentProductionService::produce(Project, locales)` — Sprint 19 swap → Claude-backed adapter
+  - **DTO** `ContentBundle` (pageIds + articleIds + faqIds + producedLocales)
+  - **Domain event** `ContentProduced`
+  - **Adapter Sprint-15** `HeuristicContentProductionService` : pour chaque locale, 1 Page par blueprint page entry (fallback `home`), 1 Article pillar par journey, 3 FAQs canonical ; `updateOrCreate` idempotent
+  - **Job** `ProduceContentJob` (queueable, 3 retries) : résout locales (primary + target_locales filtré supportedLocales), produit, écrit metadata.content, dispatch event
+  - **Listener** `StartContentProductionOnGitHubReady` chaîne `GitHubRepositoryCreated` → `ProduceContentJob` (étape 5 → étape 6 auto)
+  - **Tests Pest** (6 nouveaux, +225 total → **225 / 553 assertions**) : binding, multilingue 4+2+6 rows, fallback empty BP, idempotency double-run, Job persist+event, listener chain
+  - **Quality** : PHPStan No errors, Pint **404 files PASS**
+
 - Sprint 14 — Automation request capture + public layout primitives (Marketing BC) :
   - **Migration `automation_requests`** : multi-tenant FK project_id nullable, fields first_name / last_name / email / phone_country_code+phone_number / company / category / message / rgpd_accepted, 5 STATUS_* (new/contacted/qualified/won/lost), tracking ip_address + user_agent + source + utm JSON
   - **Eloquent `AutomationRequest`** : helpers `fullName()` + `fullPhone()`
