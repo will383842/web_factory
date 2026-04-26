@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Content;
 
 use App\Application\Content\Services\EmbeddingService;
+use App\Application\Content\Services\KnowledgeBaseSearchService;
 use App\Application\Content\Services\KnowledgeChunkSearchResult;
 use App\Models\KnowledgeChunk;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ use stdClass;
  * Multi-tenant scope is mandatory: every read filters on `project_id`
  * to prevent cross-tenant leaks (a hard requirement from Spec 04).
  */
-final class PgVectorKnowledgeBase
+final class PgVectorKnowledgeBase implements KnowledgeBaseSearchService
 {
     public function __construct(private readonly EmbeddingService $embedder) {}
 

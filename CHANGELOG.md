@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 8 — SEO/AEO Engine (Marketing BC) :
+  - **DTOs** : `JsonLdSchema`, `HreflangAlternate`, `SitemapEntry`, `InternalLinkSuggestion`
+  - **JsonLdGenerator** : 5 schémas schema.org (`WebSite` avec `SearchAction`, `Organization`, `Article`, `FAQPage` AEO-essential, `BreadcrumbList`)
+  - **HreflangBuilder** : multi-locale + auto `x-default` fallback, render HTML link tags
+  - **SitemapBuilder** : `sitemap.xml` valide (`<urlset>` + `xhtml:link` alternates inline)
+  - **IndexNowPingService** port + `LogIndexNowPingService` (Sprint 16 swap → real HTTP adapter Bing/Yandex/Naver/Seznam)
+  - **InternalLinkSuggester** : utilise `KnowledgeBaseSearchService` (pgvector cosine) pour suggérer top N liens internes pertinents par cosine similarity, exclut l'article source, génère anchor hint
+  - **AeoOptimizer** : score 0-100 sur 6 axes (Q-headings, short answer paragraphs, TL;DR, FAQ section, lists, definitions) + suggestions actionables
+  - **DomainServiceProvider** : binding `KnowledgeBaseSearchService` → `PgVectorKnowledgeBase` + `IndexNowPingService` → `LogIndexNowPingService` ; `PgVectorKnowledgeBase` implémente désormais le port `KnowledgeBaseSearchService`
+  - **Tests Pest** (14 nouveaux, +121 total → **121 / 314 assertions**) :
+    - JsonLdGenerator : 6 tests (WebSite SearchAction, Organization, Article, FAQPage AEO, BreadcrumbList, JSON serialization no escaped slashes)
+    - HreflangBuilder + SitemapBuilder : 4 tests (alternates + x-default, HTML render, empty input, sitemap.xml structure complète)
+    - InternalLinkSuggester : 1 test (KB-powered, exclude self)
+    - AeoOptimizer : 3 tests (full optimized ≥80, wall-of-text <40, partial credit)
+
 - Sprint 7 — Content Engine + multi-tenant + pgvector (KB foundation) :
   - **Postgres image** : switch `postgres:16-alpine` → `pgvector/pgvector:pg16` (extension `vector` v0.8.2)
   - **Migrations multi-tenant** :
