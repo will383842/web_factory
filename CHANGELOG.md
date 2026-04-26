@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 13.3 — Onboarding flows + activation score (Marketing BC) :
+  - **2 migrations** : `onboarding_flows` (FK project_id nullable, slug+project unique, audience enum + steps JSON), `user_onboarding_progress` (unique user+flow, score 0-100, completed_steps JSON, started_at/completed_at)
+  - **2 Eloquent models** : `OnboardingFlow` (3 const AUDIENCE_*, casts steps → AsArrayObject), `UserOnboardingProgress` (relations user+flow)
+  - **Application services** :
+    - `ActivationScoreCalculator` : weighted % (sum completed weights / sum total weights × 100), missing weight = 1
+    - `OnboardingOrchestrator` : `start()` (firstOrCreate avec started_at), `markStepCompleted()` (recompute score, dedup, set completed_at si score=100)
+  - **Filament admin (groupe "Marketing")** :
+    - `OnboardingFlowResource` CRUD : icon rocket-launch, form Identity + Repeater steps (key/title/weight/cta_url/icon, reorderable), table avec audience + steps_count + progress_count
+    - `UserOnboardingProgressResource` read-only (canCreate=false) : icon chart-bar, table avec score badge couleur (≥80 success, ≥40 warning, <40 danger) + filter completed
+  - **Tests Pest** (10 nouveaux, +200 total → **200 / 491 assertions**) :
+    - ActivationScoreCalculator (4 cas : empty=0, weighted 70%, full 100%, missing weight=1)
+    - OnboardingOrchestrator (start fresh, markStepCompleted dedup, completed_at quand score=100)
+    - Filament admin reaches 3 routes
+  - **Quality** : PHPStan No errors, Pint **366 files PASS**
+
 - Sprint 13.2 — Teams + SSO (Identity extension) :
   - **4 migrations** : `teams` (slug unique, owner FK, settings JSON), `team_members` (3 ROLE_OWNER/ADMIN/MEMBER, unique team_id+user_id), `team_invitations` (sha256 token_hash unique, status pending/accepted/revoked/expired, expires_at default 7j), `sso_identities` (provider+provider_user_id unique, tokens chiffrés via cast `encrypted`)
   - **4 Eloquent models** : `Team` (3 const ROLE_*, BelongsTo owner/project, BelongsToMany members + HasMany invitations), `TeamMember`, `TeamInvitation` (4 STATUS_* + `hashToken()` static + `isPending()`), `SsoIdentity` (5 const PROVIDER_*, casts encrypted sur access/refresh tokens)
