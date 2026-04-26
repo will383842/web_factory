@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprint 11 — Modules avancés (News + Apparence + SEO Hub) :
+  - **News module** (time-sensitive content) :
+    - Migration `news` table multi-tenant (FK project_id, expires_at index)
+    - Domain `Content\Entities\NewsItem` (separate aggregate from Article — auto-archive sur expires_at, no quality gate)
+    - Eloquent `App\Models\News` (BelongsTo Project, isExpired() helper)
+    - Filament `NewsResource` icon megaphone, navigation group "Content", form 3 sections (Identity / Content / Lifecycle)
+  - **Apparence module** (design tokens) :
+    - `App\Settings\AppearanceSettings` (11 tokens : palette 5 couleurs + 2 fonts + 3 radii + spacing unit)
+    - Migration settings avec defaults Sprint 7 (indigo/slate)
+    - Filament `Pages\ManageAppearanceSettings` icon paint-brush, navigation group "Design", 3 sections (Palette ColorPicker / Typography / Radii & spacing)
+  - **SEO Hub** :
+    - `App\Application\Marketing\Services\SeoHubAggregator` : counts par type (pages/articles/faqs/news/kb_chunks) + averages quality/word_count + sample-based AEO score sur 50 derniers articles publiés
+    - Filament `Pages\SeoHub` icon magnifying-glass, navigation group "Marketing"
+    - Blade view `resources/views/filament/pages/seo-hub.blade.php` avec 6 sections grid responsive + couleur AEO score (success ≥80, warning 60-79, danger <60)
+  - 5 routes nouvelles : `/admin/news` ×3 + `/admin/manage-appearance-settings` + `/admin/seo-hub`
+  - **Tests Pest** (8 nouveaux, +146 total → **146 / 370 assertions**) :
+    - News : admin index/create OK, isExpired sur past expires_at
+    - Appearance : defaults Sprint 11, save+reload roundtrip, admin reaches page
+    - SEO Hub : aggregator counts par projet (articles + pillar + avg_quality + faqs featured), admin reaches page
+
 - Sprint 10 — Filament Content modules (CRUD admin Page/Article/FAQ) :
   - **PageResource** : navigation group "Content", icon document-text, form 3 sections (Identity / Type & status / Content + KeyValue meta tags + textarea content_blocks JSON), table avec status/type/locale badges + 3 filtres
   - **ArticleResource** : icon newspaper, form 4 sections (Identity / Content avec body live afterStateUpdated → auto word_count + reading_time / SEO TagsInput keywords + is_pillar toggle / Stats computed read-only), table avec is_pillar boolean column + 3 filtres incl. TernaryFilter pillar
