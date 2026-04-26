@@ -13,6 +13,7 @@ use App\Application\Catalog\Services\IdeaAnalysisService;
 use App\Application\Content\Services\EmbeddingService;
 use App\Application\Content\Services\KnowledgeBaseSearchService;
 use App\Application\Marketing\Services\IndexNowPingService;
+use App\Application\Operations\Services\BackupService;
 use App\Domain\Catalog\Contracts\ProjectRepositoryInterface;
 use App\Domain\Catalog\Events\DesignGenerated;
 use App\Domain\Catalog\Events\ProjectCreated;
@@ -25,6 +26,7 @@ use App\Infrastructure\Content\Listeners\IngestPublishedContentToKnowledgeBase;
 use App\Infrastructure\Content\PgVectorKnowledgeBase;
 use App\Infrastructure\Events\LaravelEventDispatcher;
 use App\Infrastructure\Marketing\LogIndexNowPingService;
+use App\Infrastructure\Operations\LocalFilesystemBackupService;
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentProjectRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentUserRepository;
 use App\Infrastructure\Pipeline\HeuristicBlueprintGenerationService;
@@ -46,6 +48,7 @@ use Illuminate\Support\ServiceProvider;
  * Sprint 6: + Pipeline ports steps 4-5 + listener.
  * Sprint 7: + EmbeddingService + KB ports + auto-import listeners.
  * Sprint 8: + KnowledgeBaseSearchService binding + IndexNow port.
+ * Sprint 12: + BackupService (local-filesystem placeholder).
  */
 final class DomainServiceProvider extends ServiceProvider
 {
@@ -68,6 +71,9 @@ final class DomainServiceProvider extends ServiceProvider
 
         // Sprint 8 — Marketing
         $this->app->bind(IndexNowPingService::class, LogIndexNowPingService::class);
+
+        // Sprint 12 — Operations / Backups
+        $this->app->bind(BackupService::class, LocalFilesystemBackupService::class);
     }
 
     public function boot(Dispatcher $events): void
