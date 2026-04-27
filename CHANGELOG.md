@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- **PHASE FINALE — End-to-end production-readiness verification** (2026-04-27) :
+  - `tests/Feature/Sprint25EndToEndTest.php` — un seul test exerce l'ensemble du stack en chaîne (12 sections / 63 assertions) :
+    1. Pipeline 7-step : create project → status `deployed`
+    2. 8 metadata keys vérifiées (analysis / blueprint / design / brief / brief_score / github / content / deployment)
+    3. Content multilingue (FR-FR + EN-US, pillar article, FAQs)
+    4. Public surface : `/`, manifest, sw.js, healthcheck
+    5. Security headers (X-CTO + X-Frame DENY + HSTS 1y)
+    6. Public CTA modal `/api/v1/automation-requests`
+    7. Stripe webhook idempotency (1 row sur 2 deliveries)
+    8. SSO `/api/v1/auth/sso/google/{redirect,callback}`
+    9. NotificationDispatcher template + opt-out matrix
+    10. BackupRunner produit un row succeeded
+    11. TeamService createTeam + inviteMember
+    12. **21 routes Filament admin** vérifiées en boucle
+  - **Total final** : **238 tests / 664 assertions** ✅ • PHPStan level 8 No errors ✅ • Pint **420 files PASS** ✅
+  - **Verification** : 35 migrations toutes ran, 25 routes API v1, 47 routes /admin, 20 Filament resources, 11 bounded contexts, 7-step pipeline e2e fonctionnel
+
 - Sprints 17-25 — Final consolidated batch (production checklist, observabilité, growth/CRO, viralité, PWA, sécurité, RGPD, launch playbook) :
   - **Sprint 17** : `docs/PRODUCTION_CHECKLIST.md` — 11-section status (pipeline / BCs / quality gates / Filament / public surface / Sprint-16 swap-map / security / GDPR / observability / backups / PWA)
   - **Sprint 18** : `GET /api/v1/health` (HealthController) — checks app + db (PDO + SELECT 1) + redis (PING), 200 ok / 503 degraded
