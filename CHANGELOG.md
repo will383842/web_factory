@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- Sprints 17-25 — Final consolidated batch (production checklist, observabilité, growth/CRO, viralité, PWA, sécurité, RGPD, launch playbook) :
+  - **Sprint 17** : `docs/PRODUCTION_CHECKLIST.md` — 11-section status (pipeline / BCs / quality gates / Filament / public surface / Sprint-16 swap-map / security / GDPR / observability / backups / PWA)
+  - **Sprint 18** : `GET /api/v1/health` (HealthController) — checks app + db (PDO + SELECT 1) + redis (PING), 200 ok / 503 degraded
+  - **Sprint 20** : Migration + Eloquent `event_tracking` (project+user+session+name+properties+occurred_at, 4 const NAME_*)
+  - **Sprint 22** : Migration + Eloquent `referral_codes` (unique code, redeemed_count denorm, bonus_credits_cents)
+  - **Sprint 23** : `public/manifest.webmanifest` + `public/sw.js` (network-first navigate, cache-first static) + routes web servant les fichiers
+  - **Sprint 24** :
+    - `SecurityHeaders` middleware (OWASP : X-Content-Type-Options nosniff, X-Frame-Options DENY, HSTS 1y, CSP self+Bunny, Referrer-Policy, Permissions-Policy) registered global dans bootstrap/app.php
+    - `GET /api/v1/me/export` (RGPD Article 15) → JSON user + sso_identities + memberships + invitations + billing + notifications + preferences + automation_requests
+    - `DELETE /api/v1/me` (RGPD Article 17) → anonymise BillingCustomer + NotificationDispatch puis cascade-delete user
+  - **Sprint 25** : `docs/LAUNCH_PLAYBOOK.md` — 8 sections (provision Hetzner, secrets table, migrations, smoke tests, first customer flow, 24h post-launch checks, rollback, AI killswitch)
+  - **Tests Pest** (8 nouveaux, +237 total → **237 / 601 assertions**)
+  - **Quality** : PHPStan No errors, Pint **419 files PASS**
+
 - Sprint 16 — Pipeline step 7 (production deploy) + ADRs swap-map :
   - **Application port** `DeploymentService::deploy(Project)` + `provider()` — Sprint-16 default impl `PlaceholderDeploymentService` retourne `https://{slug}.webfactory.test`
   - **DTO** `DeploymentResult` (success / provider / liveUrl / previewUrl / deploymentId / errorMessage)

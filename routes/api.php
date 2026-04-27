@@ -10,9 +10,14 @@ use App\Http\Controllers\Api\V1\Auth\SsoController;
 use App\Http\Controllers\Api\V1\Auth\TwoFactorController;
 use App\Http\Controllers\Api\V1\AutomationRequestController;
 use App\Http\Controllers\Api\V1\Billing\StripeWebhookController;
+use App\Http\Controllers\Api\V1\Compliance\GdprController;
+use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ProjectController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+// Sprint 18 — Healthcheck (no auth, called by uptime probes)
+Route::get('v1/health', HealthController::class)->name('api.v1.health');
 
 // Public webhooks (Sprint 13.1) — no auth, signature verification added Sprint 16
 Route::post('v1/billing/webhooks/stripe', StripeWebhookController::class)
@@ -63,5 +68,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::apiResource('projects', ProjectController::class)
             ->only(['index', 'show', 'store', 'destroy']);
+
+        // Sprint 24 — RGPD Article 15 + 17 (caller's own user only)
+        Route::get('me/export', [GdprController::class, 'export'])->name('me.export');
+        Route::delete('me', [GdprController::class, 'delete'])->name('me.delete');
     });
 });

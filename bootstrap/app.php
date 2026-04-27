@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TenantContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Sprint 24 — OWASP security headers on every response (web + api).
+        $middleware->append(SecurityHeaders::class);
+
         // Sprint 9 — Multi-tenant audit: tag every API request with the
         // current project_id so KB search, sitemap, internal-links etc.
         // scope automatically.
