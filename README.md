@@ -80,7 +80,7 @@ Branches : `feat/{bc}-{topic}`, `fix/{bc}-{topic}`. Conventional Commits requis.
 
 ## Liens
 
-- Spec complète (read-only) : `C:\Users\willi\Documents\Projets\webfactory\`
+- Spec complète (read-only) : `C:\Users\willi\Documents\Projets\VS_CODE\Outils_communication\webfactory\`
 - ADR : `docs/adr/`
 - Architecture : `docs/architecture.md`
 - CI : `.github/workflows/ci.yml`

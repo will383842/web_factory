@@ -112,7 +112,7 @@ will fail — read the failure message, it points to the exact file.
 
 ## Where to ask for help
 
-- **Specs** (read-only): `C:\Users\willi\Documents\Projets\webfactory\` — 33 markdown files,
+- **Specs** (read-only): `C:\Users\willi\Documents\Projets\VS_CODE\Outils_communication\webfactory\` — 33 markdown files,
   exhaustive.
 - **Decisions taken**: `docs/adr/` — read these before introducing a new pattern.
 - **Past incidents / project memory**: SOS Expat memory in Claude Code (`MEMORY.md`).

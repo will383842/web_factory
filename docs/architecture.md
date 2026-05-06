@@ -1,6 +1,6 @@
 # Architecture — WebFactory
 
-> One-page overview. Detailed specs live in `C:\Users\willi\Documents\Projets\webfactory\` (READ-ONLY).
+> One-page overview. Detailed specs live in `C:\Users\willi\Documents\Projets\VS_CODE\Outils_communication\webfactory\` (READ-ONLY).
 
 WebFactory is a **modular monolith** written in Laravel 12 + Filament v4. It packages an admin
 "console", a multi-tenant content engine, an SEO/AEO pipeline, billing and analytics, into one

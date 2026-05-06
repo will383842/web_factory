@@ -99,7 +99,7 @@ Chaque site généré reçoit son propre `CLAUDE.md` à la racine de son repo, r
 | **Stripe webhook** | `POST /api/v1/billing/webhooks/stripe` — idempotency garantie par `IdempotentBillingWebhookProcessor` |
 | **CI** | `.github/workflows/ci.yml` (Pint + PHPStan + ESLint + Prettier + Pest + Vitest) |
 | **ADR** | `docs/adr/0001..0043` (13 ADRs) |
-| **Spec read-only** | `C:\Users\willi\Documents\Projets\webfactory\` (33 fichiers spec hors repo) |
+| **Spec read-only** | `C:\Users\willi\Documents\Projets\VS_CODE\Outils_communication\webfactory\` (33 fichiers spec hors repo) |
 
 ## Conventions de code
 
