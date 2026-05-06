@@ -7,6 +7,108 @@ and this project adheres to [Semantic Versioning].
 
 ### Added
 
+- **Sprint 30 — Completeness Pack: 5 préambules + verifier enrichi (2026-04-27)** :
+  - Goal: garantir qu'une plateforme générée n'oublie **jamais** les éléments standards (header, footer, blog, pages légales, composants UI, emails transactionnels, auth flows). Combien de fois on a livré un site sans cookie banner ou sans page mentions légales ? Plus jamais. WebFactory devient le DNA fonctionnel de tous les projets.
+  - **5 nouveaux préambules** committés sous `resources/brief-defaults/0X-*.md` (~30 KB total) :
+    - `06-pages-layout.md` — header sticky avec nav/logo/CTA/dark-toggle, footer 4 colonnes, **25+ pages publiques imposées** (Home, About, Pricing, Contact, FAQ, Blog index/show, Help, Case studies, Changelog, Mentions légales, CGU, CGV, Privacy, Cookies, Accessibility, Search, Sitemap.xml, Robots.txt, Manifest, RSS, 404, 500, Maintenance), pages B2C (auth, onboarding, dashboard, account/profile/security/notifications/billing/data/api-tokens/integrations), layout patterns (container, spacing, alternance bg, ATF rule)
+    - `07-components.md` — catalogue exhaustif de **30+ composants** : Hero, Features, Testimonials, PricingTable, FAQAccordion, CallToActionStrip, LogoCloud, StatsGrid, CommandMenu (Cmd+K **obligatoire**), BreadcrumbNav, Pagination, TableOfContents, NewsletterForm, ContactForm, SearchInput, DateRangePicker, MultiSelect, FileDrop, EmptyState, LoadingSkeleton, ErrorBoundary, Toast (Sonner), ProgressBar, Dialog/Sheet/Drawer, Popover/Tooltip/HoverCard, DropdownMenu, ConfirmDialog, BlogCard, ArticleHeader, RelatedArticles, ShareButtons, AuthorCard, ReadingProgress, **CookieBanner GDPR**, GDPRDataExportButton, GDPRAccountDeleteButton, DarkModeToggle, LocaleSwitcher, CopyButton, ImageWithFallback. Chacun avec props définies, a11y, variants `cva`.
+    - `08-content-engine.md` — **6 articles seed minimum** au lancement (pillar + guide + comparatif + FAQ + use case + announce), structure article non-négociable (TL;DR + TOC + H2/H3 + citations + tableau + FAQ + related), métadonnées DB obligatoires (slug, excerpt, tldr, reading_time, json_ld, etc.), tables `articles`/`categories`/`tags`/`authors`/`article_tag`/`article_views`, fonctionnalités blog (listing paginé, filters, search, RSS, sitemap blog, newsletter signup, related auto), AEO patterns par article, calendrier de publication 1/semaine min, drafts & versions, comments optionnels, stats par article
+    - `09-auth-account.md` — flows complets register / login / logout / magic link / 2FA TOTP / SSO (Google + Apple + GitHub min via Socialite) / password reset, **9 pages account obligatoires** (profile, security, notifications, billing, api-tokens, data RGPD, integrations), onboarding 5 étapes (welcome → profile → preferences → first-action → dashboard), audit trail dans `audit_logs`, sessions actives multi-device, rate limiting (5/5min login, 3/1h reset), empty states post-onboarding
+    - `10-comms.md` — **15 templates emails transactionnels** obligatoires (welcome, email_verification, password_reset, password_changed, email_changed, login_anomaly, 2fa_enabled/disabled, subscription_started/renewed/cancelled, payment_failed, invoice_paid, account_deletion_*, data_export_ready) + 6 templates marketing (newsletter, digest, announcement, release, tips, winback), 9 channels (in_app/email/sms/whatsapp/push_web/push_mob/telegram/slack/discord) avec matrice user × event_type × channel, structure email (subject/markdown/plain/preview Blade), style responsive dark-mode aware, header/footer standardisés avec unsubscribe one-click RFC 8058, tracking opens/clicks/bounces, notification in-app via Reverb websockets, 5 events transactionnels bypass opt-out
+  - **Settings Spatie étendus** : `BriefDefaultsSettings` passe de 5 à 10 propriétés (+ `pagesLayout`, `components`, `contentEngine`, `authAccount`, `comms`). Migration `2026_04_27_180000_add_completeness_pack_to_brief_defaults.php` charge les valeurs initiales depuis les .md.
+  - **Filament page** `ManageBriefDefaults` étendue : passe de 5 à 10 sections collapsibles, chacune avec textarea autosize en font-mono.
+  - **`BriefDefaultsInjector`** : concatène désormais les **10 sections** dans l'ordre quality pack → completeness pack → original brief. L'ordre est délibéré (LLMs weighting earlier-document instructions plus fort).
+  - **`WorkspaceVerifier` enrichi** : **23 nouveaux checks "completeness"** (`completeness_*`) — manifest, service_worker, robots, sitemap, rss, header_view, footer_view, page_about/contact/pricing/faq, blog_index/show, legal_mentions/terms/privacy/cookies, error_404/500, auth_login/register, filament_admin/resources, email_layout/welcome/password_reset. Multi-pattern (chaque check accepte plusieurs paths conventionnels). Score pondéré par criticité (legal_mentions/legal_privacy weight 4, components weight 2-3).
+  - **Tests Pest** (6 nouveaux, +276 total) : injector concatène 10 sections dans le bon ordre, completeness only fonctionne, all-empty no-op, verifier détecte les manques, verifier passe quand les fichiers existent (any-of-paths logic), Filament page expose les 5 nouvelles sections.
+  - **Quality** : PHPStan No errors, Pint **442 files PASS**.
+
+- **Sprint 29 — Phase 2 push GitHub automatique + fix CSP Livewire** (2026-04-27) :
+  - **Bugfix CSP** : ajout de `'unsafe-eval'` dans `script-src` du middleware `SecurityHeaders` — Filament/Livewire/Alpine.js compilent les directives `x-on:click="…"` en `AsyncFunction` à la volée et étaient cassés avec le CSP strict de Sprint 24. Aussi `connect-src ws: wss:` pour Reverb. Documenté dans le commentaire du middleware.
+  - **DTO** `App\Application\Catalog\DTOs\GitPushResult` (success, remoteUrl, commitSha, manualCommand, output, errorMessage, phases).
+  - **Application service** `App\Application\Catalog\Services\WorkspaceGitPusher` (singleton-bound) : exécute `git init / config / add / commit / remote add|set-url / push` via `Symfony\Component\Process\Process` dans le workspace mounté. 5 phases enforced, PAT injecté **uniquement** dans la commande push (jamais dans la config), URL nettoyée après. Gère `safe.directory` pour le bind mount cross-OS, désactive `commit.gpgsign` / `tag.gpgsign` pour éviter les prompts GPG. Idempotent — re-runs sur repo existant OK.
+  - **Sans PAT** : prépare le repo (init+commit+remote) et surface la commande exacte à lancer manuellement (`cd <hostPath> && git push -u origin main`) — pas de blocage, le développeur peut pusher depuis son terminal Windows.
+  - **Filament action** `Push to GitHub` ajoutée à `EditProject::getHeaderActions()` — 1 click → notif success/warning + persistance `metadata.github.last_push` complet (sha, phases, output, manual_command).
+  - **Section Filament** "GitHub repo" enrichie : affiche dernière date de push réussi + bloc d'erreur ambre avec commande manuelle copy-paste si dernier push a échoué.
+  - **Configuration** : 5 nouvelles variables env `WEBFACTORY_GH_TOKEN`, `WEBFACTORY_GIT_USER_NAME`, `WEBFACTORY_GIT_USER_EMAIL`, `WEBFACTORY_GIT_DEFAULT_BRANCH`, `WEBFACTORY_GIT_COMMIT_MESSAGE`. Documentées dans `.env.example` + commentaire détaillé dans `config/webfactory.php`.
+  - **Tests Pest** (7 nouveaux, +270 total) avec **bare-repo en disque** comme remote fake (jamais d'appel réseau réel) :
+    - 6 phases exécutées dans l'ordre + manual_command généré sans PAT
+    - Workspace inexistant → erreur claire
+    - Idempotency : 2e push même SHA, pas de double commit
+    - `set-url` quand l'origin existe déjà avec une URL différente
+    - URL normalization (.git suffix, strip embedded credentials)
+    - Token injection (HTTPS only, SSH unchanged)
+    - DI singleton binding
+  - **Quality** : PHPStan No errors, Pint **440 files PASS**.
+
+- **Sprint 28 — Quality Defaults Pack: 5 préambules + workspace verifier** (2026-04-27) :
+  - Goal: every uploaded brief receives a non-negotiable baseline of quality (design 2026, production-readiness, accessibility WCAG 2.2 AA, SEO/AEO 2026, OWASP security) **before** Claude Code reads it. After Claude Code finishes, a static `WorkspaceVerifier` checks the generated structure against a 30+ rules checklist.
+  - **5 markdown preambles** committed under `resources/brief-defaults/0X-*.md` (~26 KB total) :
+    - `01-design.md` — Tailwind v4 + shadcn/ui + Radix + Framer Motion + Heroicons + tokens HSL + dark mode + Container Queries + reduced-motion + Core Web Vitals + 30+ anti-patterns
+    - `02-production.md` — Docker multi-stage + healthcheck + HSTS + CI/CD + tests 70 % coverage + PHPStan L8 + Sentry + healthcheck endpoint + backups + queues + RGPD + 8 anti-patterns
+    - `03-accessibility.md` — semantic HTML + keyboard nav + ARIA + contrasts 4.5:1 + form a11y + media + reduced-motion + i18n + axe-core + Lighthouse 95+
+    - `04-seo-aeo.md` — Core Web Vitals 2026 + JSON-LD by content type + AEO patterns (TL;DR, Q&R, citations, JSON-LD QAPage) + robots.txt for AI crawlers (GPTBot/Google-Extended/anthropic-ai/ClaudeBot/PerplexityBot) + sitemap + IndexNow + AVIF/WebP + URL canonical rules
+    - `05-security.md` — OWASP Top 10 2024 + headers durs (CSP strict, HSTS preload, COOP/COEP/CORP, Permissions-Policy) + Argon2id + 2FA TOTP + rate limiting + input validation + SQL/XSS/CSRF + secrets management + webhook signatures + Dependabot
+  - **Settings Spatie** `App\Settings\BriefDefaultsSettings` (group `brief_defaults`) — 5 textarea + 1 toggle, éditable depuis Filament. Initial values populated from the markdown templates above by migration `2026_04_27_100000_create_brief_defaults_settings.php`.
+  - **Filament page** `App\Filament\Pages\ManageBriefDefaults` (route `/admin/manage-brief-defaults`, group "Catalog") — toggle + 5 sections collapsibles avec textarea autosize en font-mono.
+  - **Application service** `App\Application\Catalog\Services\BriefDefaultsInjector` :
+    - Prepend les 5 préambules au CLAUDE.md uploadé dans l'ordre design → production → a11y → SEO → security → original brief
+    - Marker HTML `<!-- WEBFACTORY_DEFAULTS_INJECTED -->` pour idempotency (re-import = no-op)
+    - Master switch via `injectionEnabled` settings flag
+    - Méthode `augmentFile()` qui lit + augmente + écrit en disque
+  - **`BriefImporter` extended** : injecte automatiquement les préambules juste après extraction, persiste `metadata.brief.parsed_claude_md.defaults_injected` (bool) pour audit
+  - **Workspace verifier** `App\Application\Catalog\Services\WorkspaceVerifier` + DTO `WorkspaceVerificationReport` :
+    - **Static-only** filesystem inspection (pas de subprocess) — 30+ rules pondérées (CRITICAL × 5, BACKEND × 9, FRONTEND × 5, DEVOPS × 3 + bonus migrations/tests count)
+    - Stack-aware : détecte `backend/`, `api/` ou root pour Laravel ; `frontend/`, `web/` ou root pour Next.js
+    - Score 0-100 pondéré, threshold `isReady() >= 80 && no failures`
+    - Catégorise en passed / failed / warnings — adapté à l'affichage Filament
+  - **Filament action** `Verify workspace` ajoutée à `EditProject::getHeaderActions()` — 1 click → scan + persist `metadata.workspace_verification` + notification Filament
+  - **Section Filament** "Workspace verification" dans le ProjectForm — affiche score colorisé (green ≥ 80, amber ≥ 50, red < 50) + détails passed/failed/warnings dans `<details>` collapsibles
+  - **Tests Pest** (12 nouveaux, +263 total) :
+    - Injector : ordre des préambules, master switch off, idempotency, write-to-disk
+    - Verifier : workspace missing, minimal workspace, Laravel root detection, frontend root detection, monorepo `backend/` + `frontend/`, empty migrations/tests warnings, isReady() rules
+    - Filament page accessible
+  - **E2E réel validé** : import du brief Avocat-IA-COMPLET-DEFINITIF — CLAUDE.md passe de 28 KB à 56 KB (les 5 préambules sont bien injectés en tête), `defaults_injected: true`, score Verifier = 19/100 (logique : juste le brief, pas encore de code généré)
+  - **Quality** : PHPStan No errors, Pint **437 files PASS**
+
+- **Sprint 27 — Brief upload + Claude-Code-friendly workspace** (2026-04-27) :
+  - Goal: developer drops a brief ZIP (CLAUDE.md + docs/) into the admin, gets a ready-to-`cd` workspace on the host filesystem, opens `claude` in their terminal — Claude Code (running natively, billed against the developer's Pro/Max subscription) reads the spec and generates the project. **Zero Anthropic API marginal cost.**
+  - **Bind mount** in `docker-compose.yml` exposes `WEBFACTORY_PROJECTS_HOST_PATH` (default `C:/Users/willi/Documents/Projets`) to wf-app at `/host/projects`. Claude Code on the host and PHP inside the container see the same files.
+  - **Config** `config/webfactory.php` declares `projects.host_path` + `projects.container_path` — the host path is what gets shown to the developer, the container path is what PHP uses for filesystem ops.
+  - **DTO** `App\Application\Catalog\DTOs\BriefImportResult` — workspace paths, extracted file counts, total bytes, parsed CLAUDE.md.
+  - **Application service** `App\Application\Catalog\Services\BriefImporter` (singleton-bound in `DomainServiceProvider`) :
+    - Validates slug (lowercase ASCII + dashes only, identical to `Slug` VO regex)
+    - Refuses to overwrite an existing workspace (loud failure, protects in-progress generations)
+    - Manual zip iteration with **backslash → slash normalization** so Windows-PowerShell `Compress-Archive` ZIPs (which embed `\` separators) extract correctly on Linux containers — fixes a flat-file bug found during E2E with a 27-entry Avocat-IA brief
+    - Path-traversal guard (rejects entries containing `..`)
+    - Auto-flattens single-folder ZIP wrappers (common Windows Explorer pattern) so CLAUDE.md ends up at workspace root
+    - Lightweight CLAUDE.md parser: extracts H1 title, H2 section count, detected stack (Laravel, Filament, Next.js, React, Vue, Postgres, Redis, Tailwind, Stripe), production URL — pure regex, no schema dependency on the developer's brief format
+  - **Filament page** `App\Filament\Pages\UploadBrief` (route `/admin/upload-brief`) : single screen — slug, name, locale, description, GitHub repo URL, ZIP upload (max 50 MB) → creates Project via existing `CreateProjectHandler`, calls `BriefImporter`, persists `metadata.brief` + `metadata.github`, redirects to the project edit page. Blade view at `resources/views/filament/pages/upload-brief.blade.php` includes the next-steps cheatsheet.
+  - **ProjectForm** gains a "Workspace & GitHub" Section that surfaces : the host path (copyable), the exact `cd … && claude` command, the GitHub URL link, and a brief summary (title, file counts, detected stack, H2 section count). Read-only, computed from `metadata.brief`.
+  - **Tests Pest** (7 nouveaux, +251 total) : flat-zip extraction, single-folder-wrapper flattening, slug safety, workspace-conflict refusal, missing-CLAUDE.md graceful fallback, DI singleton, Filament page reachable.
+  - **E2E réel validé** : import du brief Avocat-IA-COMPLET-DEFINITIF (28 KB CLAUDE.md, 26 docs `.docx`) → 27 fichiers extraits dans `C:/Users/willi/Documents/Projets/avocat-ia-e2e/`, titre parsé "CLAUDE.md — Avocat-IA", H2 sections=13, stack détectée. Prêt pour `cd avocat-ia-e2e && claude`.
+  - **Quality** : PHPStan No errors, Pint PASS.
+
+- **Sprint 26 — Per-platform CLAUDE.md committed by the pipeline** (2026-04-27) :
+  - Goal: every site generated by WebFactory ships with a `CLAUDE.md` at its repo root so any future Claude Code session has full context (stack, locales, content footprint, deployment URL, GitHub coords, conventions inherited).
+  - **Port extended** `App\Application\Catalog\Services\GitHubRepositoryService::commitFile()` — generic single-file commit primitive, reusable by future doc-generation steps (SECURITY.md, LICENSE, …).
+  - **DTO** `App\Application\Catalog\DTOs\GitHubCommitInfo` (sha + path + html_url + message).
+  - **Adapter** `MockGitHubRepositoryService::commitFile()` writes to the configured Laravel filesystem disk under `repos/<full_name>/<path>` and returns a deterministic SHA (sha1 of `full_name|path|content`) so re-runs are idempotent.
+  - **Application service** `ProjectDocumentationGenerator` — pure Blade renderer reading `metadata.{analysis,blueprint,design,brief,github,content,deployment,target_locales}` to produce the markdown.
+  - **Template Blade** `resources/views/generators/project-claude-md.blade.php` — single source of truth for what each generated site receives. Documents the stack, identity, deployment, GitHub repo, content footprint, blueprint pages, design tokens, conventions, run-locally instructions, and a regeneration-safety note pointing to `CLAUDE.local.md` for site-specific overrides.
+  - **Job** `WriteProjectDocumentationJob` (queueable, 3 retries, 60s backoff) reads project metadata, renders, commits, persists `metadata.documentation` (sha + path + html_url + bytes). Bails out cleanly if `metadata.github.full_name` is missing.
+  - **Listener** `WriteDocumentationOnContentProduced` chains `ContentProduced → WriteProjectDocumentationJob` in **parallel** with `StartDeployOnContentProduced` (independent side-effects, no ordering requirement).
+  - **DI wiring** added in `DomainServiceProvider::boot()`.
+  - **ADR 0044** `docs/adr/0044-claude-md-per-generated-site.md` — context, decision, consequences, swap-map for the future Octokit adapter.
+  - **Tests Pest** (6 nouveaux, +244 total) :
+    - Mock adapter writes file + returns deterministic SHA + idempotent on identical inputs
+    - Generator renders template with project name, slug, locales, live URL, GitHub coords, content counts, design tokens
+    - Job bails out cleanly when `metadata.github` is missing (no commit, no metadata change)
+    - Job commits CLAUDE.md, persists `metadata.documentation` with sha/path/html_url/bytes
+    - Listener queues `WriteProjectDocumentationJob` in parallel with `DeployProjectJob` on `ContentProduced`
+    - Full pipeline E2E now ends with `metadata.documentation` populated alongside the existing 8 keys
+  - **Sprint6PipelineChainTest** updated: full-pipeline test now asserts `metadata.documentation` is present.
+  - **Quality** : PHPStan No errors, Pint **425 files PASS**.
+
 - **PHASE FINALE — End-to-end production-readiness verification** (2026-04-27) :
   - `tests/Feature/Sprint25EndToEndTest.php` — un seul test exerce l'ensemble du stack en chaîne (12 sections / 63 assertions) :
     1. Pipeline 7-step : create project → status `deployed`

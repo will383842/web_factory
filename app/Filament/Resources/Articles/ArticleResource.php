@@ -31,6 +31,12 @@ class ArticleResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
+    /** Sprint 31 — hidden from sidebar, still accessible by direct URL. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ArticleForm::configure($schema);

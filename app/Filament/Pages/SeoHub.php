@@ -32,6 +32,12 @@ final class SeoHub extends Page
 
     protected string $view = 'filament.pages.seo-hub';
 
+    /** Sprint 31 — hidden from sidebar; URL still works. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     /**
      * @return array<string, mixed>
      */

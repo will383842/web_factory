@@ -29,13 +29,35 @@ final class SecurityHeaders
         $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
         if (! $response->headers->has('Content-Security-Policy')) {
+            // `'unsafe-eval'` is required by Alpine.js (used by Filament admin
+            // through Livewire) which compiles directives like `x-on:click="…"`
+            // into AsyncFunction at runtime. Removing it breaks the entire
+            // admin panel. Alpine ships an alternate CSP-safe build
+            // (`@alpinejs/csp`) but Filament v4 does not use it.
+            //
+            // `connect-src` must include S3-compatible storage origins so
+            // Livewire's FileUpload pre-signed PUT direct-upload works
+            // (Filament FileUpload uses this in production). We pull the
+            // configured AWS_ENDPOINT (MinIO in dev, S3 in prod) from
+            // config to avoid hardcoding hostnames.
+            $extraConnectSrc = [];
+            $awsEndpoint = (string) config('filesystems.disks.s3.endpoint', '');
+            if ($awsEndpoint !== '') {
+                $extraConnectSrc[] = $awsEndpoint;
+            }
+            // Allow common S3 / R2 production hosts even when endpoint is empty.
+            $extraConnectSrc[] = 'https://*.amazonaws.com';
+            $extraConnectSrc[] = 'https://*.r2.cloudflarestorage.com';
+            $extraConnectSrc[] = 'https://*.b2.backblazeb2.com';
+
             $response->headers->set('Content-Security-Policy', implode('; ', [
                 "default-src 'self'",
-                "img-src 'self' data: https:",
+                "img-src 'self' data: blob: https:",
                 "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
                 "font-src 'self' https://fonts.bunny.net",
-                "script-src 'self' 'unsafe-inline'",
-                "connect-src 'self'",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+                "connect-src 'self' ws: wss: blob: data: ".implode(' ', $extraConnectSrc),
+                "media-src 'self' blob:",
                 "frame-ancestors 'none'",
             ]));
         }

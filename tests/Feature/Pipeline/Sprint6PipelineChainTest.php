@@ -157,7 +157,8 @@ it('runs the full 7-step pipeline synchronously: status=deployed + metadata enri
         ->and($meta)->toHaveKey('brief_score')
         ->and($meta)->toHaveKey('github')
         ->and($meta)->toHaveKey('content')
-        ->and($meta)->toHaveKey('deployment');
+        ->and($meta)->toHaveKey('deployment')
+        ->and($meta)->toHaveKey('documentation'); // Sprint 26 — per-platform CLAUDE.md
 
     expect($meta['brief_score']['passes'])->toBeTrue()
         ->and($meta['github']['full_name'])->toBe('webfactory-org/full-pipeline')

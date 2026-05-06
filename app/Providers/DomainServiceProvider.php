@@ -8,12 +8,15 @@ use App\Application\Billing\Services\BillingGateway;
 use App\Application\Billing\Services\BillingWebhookProcessor;
 use App\Application\Catalog\Services\BlueprintGenerationService;
 use App\Application\Catalog\Services\BriefBuilderService;
+use App\Application\Catalog\Services\BriefDefaultsInjector;
+use App\Application\Catalog\Services\BriefImporter;
 use App\Application\Catalog\Services\BriefScorerService;
 use App\Application\Catalog\Services\ContentProductionService;
 use App\Application\Catalog\Services\DeploymentService;
 use App\Application\Catalog\Services\DesignGenerationService;
 use App\Application\Catalog\Services\GitHubRepositoryService;
 use App\Application\Catalog\Services\IdeaAnalysisService;
+use App\Application\Catalog\Services\WorkspaceGitPusher;
 use App\Application\Communication\Services\NotificationChannelRegistry;
 use App\Application\Content\Services\EmbeddingService;
 use App\Application\Content\Services\KnowledgeBaseSearchService;
@@ -51,6 +54,7 @@ use App\Infrastructure\Pipeline\Listeners\StartBuildOnDesignGenerated;
 use App\Infrastructure\Pipeline\Listeners\StartContentProductionOnGitHubReady;
 use App\Infrastructure\Pipeline\Listeners\StartDeployOnContentProduced;
 use App\Infrastructure\Pipeline\Listeners\StartPipelineOnProjectCreated;
+use App\Infrastructure\Pipeline\Listeners\WriteDocumentationOnContentProduced;
 use App\Infrastructure\Pipeline\MockGitHubRepositoryService;
 use App\Infrastructure\Pipeline\PlaceholderDeploymentService;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -75,6 +79,25 @@ final class DomainServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // Sprint 27 — BriefImporter needs both host and container paths.
+        // Sprint 28 — wires in the BriefDefaultsInjector so uploaded CLAUDE.md
+        // files automatically receive the design/production/a11y/SEO/security
+        // preambles defined in `/admin/manage-brief-defaults`.
+        $this->app->singleton(BriefImporter::class, fn ($app) => new BriefImporter(
+            hostBasePath: (string) config('webfactory.projects.host_path'),
+            containerBasePath: (string) config('webfactory.projects.container_path'),
+            defaultsInjector: $app->make(BriefDefaultsInjector::class),
+        ));
+
+        // Sprint 29 — git push automation.
+        $this->app->singleton(WorkspaceGitPusher::class, fn () => new WorkspaceGitPusher(
+            personalAccessToken: config('webfactory.git.pat'),
+            userName: (string) config('webfactory.git.user_name'),
+            userEmail: (string) config('webfactory.git.user_email'),
+            defaultBranch: (string) config('webfactory.git.default_branch'),
+            commitMessage: (string) config('webfactory.git.commit_message'),
+        ));
+
         $this->app->bind(EventDispatcher::class, LaravelEventDispatcher::class);
         $this->app->bind(UserRepositoryInterface::class, EloquentUserRepository::class);
         $this->app->bind(ProjectRepositoryInterface::class, EloquentProjectRepository::class);
@@ -133,6 +156,11 @@ final class DomainServiceProvider extends ServiceProvider
         $events->listen(DesignGenerated::class, StartBuildOnDesignGenerated::class);
         $events->listen(GitHubRepositoryCreated::class, StartContentProductionOnGitHubReady::class);
         $events->listen(ContentProduced::class, StartDeployOnContentProduced::class);
+
+        // Sprint 26 — parallel branch: ContentProduced also triggers the
+        // per-platform CLAUDE.md generator, which commits the rendered
+        // markdown to the project's GitHub repo independently of deploy.
+        $events->listen(ContentProduced::class, WriteDocumentationOnContentProduced::class);
 
         $events->listen(PagePublished::class, [IngestPublishedContentToKnowledgeBase::class, 'handlePagePublished']);
         $events->listen(ArticlePublished::class, [IngestPublishedContentToKnowledgeBase::class, 'handleArticlePublished']);

@@ -33,6 +33,12 @@ final class ManageAppearanceSettings extends SettingsPage
 
     protected static ?int $navigationSort = 50;
 
+    /** Sprint 31 — hidden from sidebar; URL still works for tests. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema->schema([

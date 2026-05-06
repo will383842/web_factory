@@ -30,6 +30,12 @@ class ProjectResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    /** Sprint 31 — projects are created exclusively via /admin/upload-brief. */
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ProjectForm::configure($schema);

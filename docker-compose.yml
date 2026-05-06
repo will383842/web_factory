@@ -11,6 +11,11 @@ x-app-base: &app-base
     - ./:/var/www/html:cached
     - wf-vendor:/var/www/html/vendor
     - wf-node-modules:/var/www/html/node_modules
+    # Sprint 27 — host workspace for generated project sources. The brief
+    # is extracted here and Claude Code (running natively on the host)
+    # reads/writes this directory directly. Default Windows path; override
+    # with WEBFACTORY_PROJECTS_HOST_PATH in .env on macOS / Linux.
+    - ${WEBFACTORY_PROJECTS_HOST_PATH:-C:/Users/willi/Documents/Projets}:/host/projects:cached
   depends_on:
     wf-postgres:
       condition: service_healthy

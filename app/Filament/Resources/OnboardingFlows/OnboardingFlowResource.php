@@ -29,6 +29,12 @@ class OnboardingFlowResource extends Resource
 
     protected static ?int $navigationSort = 50;
 
+    /** Sprint 31 — hidden from sidebar, still accessible by direct URL. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return OnboardingFlowForm::configure($schema);

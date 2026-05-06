@@ -33,7 +33,9 @@ final class AdminUserSeeder extends Seeder
             return;
         }
 
-        $user = User::firstOrCreate(
+        // updateOrCreate so changing ADMIN_PASSWORD in .env actually rotates
+        // the local admin password on the next `php artisan db:seed`.
+        $user = User::updateOrCreate(
             ['email' => $email],
             [
                 'name' => 'WebFactory Admin',

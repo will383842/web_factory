@@ -25,6 +25,12 @@ class AutomationRequestResource extends Resource
 
     protected static ?int $navigationSort = 70;
 
+    /** Sprint 31 — hidden from sidebar, still accessible by direct URL. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function table(Table $table): Table
     {
         return AutomationRequestsTable::configure($table);

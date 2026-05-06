@@ -33,6 +33,12 @@ class BackupResource extends Resource
         return false;
     }
 
+    /** Sprint 31 — hidden from sidebar, still accessible by direct URL. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         // Backups are read-only audit rows, no edit form.
