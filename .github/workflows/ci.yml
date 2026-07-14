@@ -34,7 +34,7 @@ jobs:
           extensions: bcmath, intl, gd, pdo_pgsql, redis, zip
 
       - name: Cache composer
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.composer/cache
           key: composer-${{ hashFiles('**/composer.lock') }}
@@ -110,7 +110,7 @@ jobs:
           extensions: bcmath, intl, gd, pdo_pgsql, redis, zip
 
       - name: Cache composer
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.composer/cache
           key: composer-${{ hashFiles('**/composer.lock') }}
