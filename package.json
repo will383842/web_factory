@@ -10,13 +10,13 @@
   "devDependencies": {
     "@commitlint/cli": "^20.5.2",
     "@commitlint/config-conventional": "^20.5.0",
-    "@inertiajs/vue3": "^3.0.3",
+    "@inertiajs/vue3": "^3.6.1",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.2.4",
     "@typescript-eslint/eslint-plugin": "^8.59.0",
     "@typescript-eslint/parser": "^8.59.0",
-    "@vitejs/plugin-vue": "^6.0.6",
-    "@vue/test-utils": "^2.4.8",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/test-utils": "^2.4.11",
     "concurrently": "^9.0.1",
     "eslint": "^10.2.1",
     "eslint-plugin-vue": "^10.9.0",
@@ -24,13 +24,13 @@
     "jsdom": "^29.0.2",
     "laravel-vite-plugin": "^3.0.0",
     "lint-staged": "^16.4.0",
-    "pinia": "^3.0.4",
+    "pinia": "^4.0.2",
     "prettier": "^3.8.3",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
     "vite": "^8.0.0",
     "vitest": "^4.1.5",
-    "vue": "^3.5.33",
+    "vue": "^3.5.40",
     "vue-tsc": "^3.2.7"
   }
 }
